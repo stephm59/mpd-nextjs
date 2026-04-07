@@ -3,15 +3,12 @@ import type { NextConfig } from 'next'
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'pub-ee5d8554679a4a23a82caac56686992a.r2.dev',
-      },
-      {
-        protocol: 'https',
-        hostname: 'bpwqdkznbmqwvvxpthhl.supabase.co',
-      },
+      { protocol: 'https', hostname: 'pub-ee5d8554679a4a23a82caac56686992a.r2.dev' },
+      { protocol: 'https', hostname: 'bpwqdkznbmqwvvxpthhl.supabase.co' },
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+      { protocol: 'https', hostname: 'www.monptitdepanneur.fr' },
     ],
+    unoptimized: true,
   },
   async redirects() {
     return [

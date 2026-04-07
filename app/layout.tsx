@@ -4,10 +4,19 @@ import StickyCallBar from '@/components/ui/StickyCallBar'
 import LocalReviewsWidget from '@/components/widgets/LocalReviewsWidget'
 import ChatDevisButton from '@/components/widgets/ChatDevisButton'
 
+// TODO: remplacer par le vrai code de vérification Google Search Console
+const GSC_VERIFICATION = 'TODO_GSC_VERIFICATION_CODE'
+
+// GA4 est déjà configuré via G-N4MLHLMQKN (script inline dans <head>)
+// TODO: si l'ID GA4 change, le mettre à jour ici et dans le script ci-dessous
+
 export const metadata: Metadata = {
   title: "Mon p'tit Dépanneur : Chauffagiste, Serrurier, Plombier (Lille)",
   description: 'Chauffagiste, Serrurier, Plombier à Lille - Intervention d\'urgence 24/7 - Devis gratuit',
   metadataBase: new URL('https://www.monptitdepanneur.fr'),
+  verification: {
+    google: GSC_VERIFICATION,
+  },
   openGraph: {
     type: 'website',
     locale: 'fr_FR',

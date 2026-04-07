@@ -1,14 +1,26 @@
 import { Shield } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 
-const insurers = [
-  'MAAF', 'GAN', 'MACIF', 'Groupama', 'MMA', 'Allianz',
-  'AXA', 'Generali', 'Aviva', 'GMF', 'MAIF', 'Matmut',
+const BASE = 'https://www.monptitdepanneur.fr/lovable-uploads'
+
+const logos = [
+  { name: 'MAAF', url: `${BASE}/28ae24a9-b5f4-4997-a612-e7ba2a0bff44.png` },
+  { name: 'GAN', url: `${BASE}/65ca6d72-0b3a-4c6b-a32e-8c4f4afc3f3d.png` },
+  { name: 'MACIF', url: `${BASE}/7461c7f1-0ba7-4640-a674-74f63cf1cb23.png` },
+  { name: 'Groupama', url: `${BASE}/8a07e6ad-843e-4660-b254-036e01df515c.png` },
+  { name: 'MMA', url: `${BASE}/76d744d1-b8eb-4306-86cd-c8061399fd55.png` },
+  { name: 'Allianz', url: `${BASE}/33d47f5d-ba2c-4f20-b9ca-d9baf196c0de.png` },
+  { name: 'AXA', url: `${BASE}/b4975621-639f-4629-84e5-023dce0f8ad6.png` },
+  { name: 'Generali', url: `${BASE}/133efda8-3643-486f-99e5-2c19ee840096.png` },
+  { name: 'Aviva', url: `${BASE}/542b1ee7-5410-4cc0-98e6-c34d63b35624.png` },
+  { name: 'GMF', url: `${BASE}/027311f7-9636-468c-8cb1-ff71ede5f2e2.png` },
+  { name: 'MAIF', url: `${BASE}/b2ce8324-e480-47de-b73f-024bafc114a8.png` },
+  { name: 'Matmut', url: `${BASE}/c9471c83-2b5d-4ed2-93ec-ff12c79df400.png` },
 ]
 
-export default function InsurancePartners() {
-  const doubled = [...insurers, ...insurers]
+const doubled = [...logos, ...logos]
 
+export default function InsurancePartners() {
   return (
     <section className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
@@ -21,19 +33,22 @@ export default function InsurancePartners() {
           </div>
           <p className="text-lg text-muted-foreground">
             Nous sommes agréés par plus de 20 compagnies d&apos;assurances pour faciliter vos démarches et
-            vous garantir une prise en charge rapide de vos sinistres.
+            vous garantir une prise en charge rapide de vos sinistres
           </p>
         </div>
 
         {/* Infinite scroll strip */}
         <div className="overflow-hidden mb-12">
-          <div className="flex gap-8 animate-scroll-continuous w-max">
-            {doubled.map((name, i) => (
-              <div
-                key={`${name}-${i}`}
-                className="flex-shrink-0 w-32 h-16 bg-white rounded-xl border border-gray-200 flex items-center justify-center shadow-sm"
-              >
-                <span className="font-bold text-primary text-sm">{name}</span>
+          <div className="flex gap-12 animate-scroll-continuous w-max">
+            {doubled.map((logo, i) => (
+              <div key={`${logo.name}-${i}`} className="flex-shrink-0 w-40 h-24 flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={logo.url}
+                  alt={`Logo ${logo.name}`}
+                  className="max-h-20 max-w-40 object-contain"
+                  loading="lazy"
+                />
               </div>
             ))}
           </div>
