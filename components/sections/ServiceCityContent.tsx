@@ -13,6 +13,7 @@ import BeforeAfter from './BeforeAfter'
 import QualityLabels from './QualityLabels'
 import BrandPartners from './BrandPartners'
 import ServiceCityZones from './ServiceCityZones'
+import { resolveBlogImage } from '@/lib/blog-image'
 
 interface Offer {
   id: string
@@ -210,23 +211,29 @@ export default function ServiceCityContent({ page, offers, faqs, testimonials, b
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-foreground mb-10 text-center">Nos conseils</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-              {blogPosts.map((post) => (
+              {blogPosts.map((post) => {
+                const imgSrc = resolveBlogImage(post.cover_image_url)
+                return (
                 <Link key={post.id} href={`/carnet/${post.slug}`} className="group block">
                   <div className="bg-white rounded-xl overflow-hidden shadow-card hover:shadow-elevated transition-shadow">
                     <div className="relative h-40 bg-gray-100">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={post.cover_image_url ?? ''}
-                        alt={post.title}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={(e) => {
-                          const el = e.currentTarget
-                          el.style.display = 'none'
-                          const parent = el.parentElement
-                          if (parent) parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-4xl">💡</div>'
-                        }}
-                      />
+                      {imgSrc ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={imgSrc}
+                          alt={post.title}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          onError={(e) => {
+                            const el = e.currentTarget
+                            el.style.display = 'none'
+                            const parent = el.parentElement
+                            if (parent) parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-4xl">💡</div>'
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-4xl">💡</div>
+                      )}
                     </div>
                     <div className="p-5">
                       <h3 className="font-bold text-foreground group-hover:text-primary transition-colors mb-2 line-clamp-2">
@@ -241,7 +248,8 @@ export default function ServiceCityContent({ page, offers, faqs, testimonials, b
                     </div>
                   </div>
                 </Link>
-              ))}
+                )
+              })}
             </div>
           </div>
         </section>

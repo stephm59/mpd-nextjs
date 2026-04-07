@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { resolveBlogImage } from '@/lib/blog-image'
 
 interface Faq {
   id: string
@@ -70,11 +71,11 @@ export default function BlogPostContent({ post, faqs, relatedPosts }: Props) {
       </div>
 
       {/* Image de couverture */}
-      {post.cover_image_url && (
+      {resolveBlogImage(post.cover_image_url) && (
         <div className="container mx-auto px-4 max-w-4xl mb-8">
           <div className="relative h-64 md:h-96 rounded-xl overflow-hidden">
             <Image
-              src={post.cover_image_url}
+              src={resolveBlogImage(post.cover_image_url)!}
               alt={post.title}
               fill
               unoptimized
@@ -137,12 +138,14 @@ export default function BlogPostContent({ post, faqs, relatedPosts }: Props) {
           <div className="container mx-auto px-4">
             <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Articles similaires</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-              {relatedPosts.map(related => (
+              {relatedPosts.map(related => {
+                const relatedImg = resolveBlogImage(related.cover_image_url)
+                return (
                 <article key={related.id} className="bg-white rounded-xl overflow-hidden shadow-card hover:shadow-soft transition-shadow">
-                  {related.cover_image_url && (
+                  {relatedImg && (
                     <div className="relative h-40">
                       <Image
-                        src={related.cover_image_url}
+                        src={relatedImg}
                         alt={related.title}
                         fill
                         unoptimized
@@ -161,7 +164,8 @@ export default function BlogPostContent({ post, faqs, relatedPosts }: Props) {
                     )}
                   </div>
                 </article>
-              ))}
+                )
+              })}
             </div>
           </div>
         </section>

@@ -5,6 +5,7 @@ import { createServerClient } from '@/lib/supabase/server'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { BUBBLE_VIDEO_URL, HERO_POSTER } from '@/config/media'
+import { resolveBlogImage } from '@/lib/blog-image'
 
 export const metadata: Metadata = {
   title: "Le Carnet de Mon p'tit Dépanneur - Conseils Plomberie, Chauffage, Serrurerie",
@@ -68,12 +69,14 @@ export default async function CarnetPage() {
 
         <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {(posts ?? []).map((post: any) => (
+            {(posts ?? []).map((post: any) => {
+              const imgSrc = resolveBlogImage(post.cover_image_url)
+              return (
               <article key={post.id} className="bg-white rounded-xl shadow-card overflow-hidden hover:shadow-elevated transition-shadow">
-                {post.cover_image_url ? (
+                {imgSrc ? (
                   <div className="relative h-48">
                     <Image
-                      src={post.cover_image_url}
+                      src={imgSrc}
                       alt={post.title}
                       fill
                       unoptimized
@@ -116,7 +119,8 @@ export default async function CarnetPage() {
                   </div>
                 </div>
               </article>
-            ))}
+              )
+            })}
           </div>
 
           {(!posts || posts.length === 0) && (

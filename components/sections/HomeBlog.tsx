@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Lightbulb, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { resolveBlogImage } from '@/lib/blog-image'
 
 interface BlogPost {
   id: string
@@ -75,25 +76,31 @@ export default function HomeBlog({ initialData }: Props) {
           </Button>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {visible.map((article) => (
+            {visible.map((article) => {
+              const imgSrc = resolveBlogImage(article.cover_image_url)
+              return (
               <Card
                 key={article.id}
                 className="overflow-hidden hover:shadow-elevated transition-all duration-300 transform hover:scale-105 bg-white border border-gray-200"
               >
                 <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={article.cover_image_url ?? ''}
-                    alt={article.title}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    onError={(e) => {
-                      const el = e.currentTarget
-                      el.style.display = 'none'
-                      const parent = el.parentElement
-                      if (parent) parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-5xl">💡</div>'
-                    }}
-                  />
+                  {imgSrc ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={imgSrc}
+                      alt={article.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        const el = e.currentTarget
+                        el.style.display = 'none'
+                        const parent = el.parentElement
+                        if (parent) parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-5xl">💡</div>'
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-5xl">💡</div>
+                  )}
                   <div className="absolute top-4 left-4">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getCategoryColor(article.services?.name)}`}>
                       {article.services?.name ?? 'Conseil'}
@@ -118,7 +125,8 @@ export default function HomeBlog({ initialData }: Props) {
                   </Link>
                 </div>
               </Card>
-            ))}
+              )
+            })}
           </div>
         </div>
 
