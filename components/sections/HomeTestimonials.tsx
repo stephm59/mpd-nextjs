@@ -80,7 +80,9 @@ export default function HomeTestimonials({ initialData }: Props) {
                       &quot;{t.content}&quot;
                     </blockquote>
                     <div className="font-semibold text-foreground mb-1">{displayName}</div>
-                    <div className="text-muted-foreground text-sm">{t.location ?? 'Région lilloise'}</div>
+                    {t.location && t.location.trim() && (
+                      <div className="text-muted-foreground text-sm">{t.location}</div>
+                    )}
                   </CardContent>
                 </Card>
               )

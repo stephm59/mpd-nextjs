@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Tv, Star, Phone, Play, Pause } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ContactForm from '@/components/forms/ContactForm'
-import { MEDIA_COVERAGE_POSTER } from '@/config/media'
 
 const MEDIA_VIDEO_URL = 'https://pub-ee5d8554679a4a23a82caac56686992a.r2.dev/video-entretien-chaudiere.mp4'
 
@@ -12,6 +11,18 @@ export default function MediaCoverage() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
+
+  // Seek to first frame on mount so the video thumbnail shows the reportage, not a black frame
+  useEffect(() => {
+    const v = videoRef.current
+    if (!v) return
+    const show = () => { v.currentTime = 0.001 }
+    if (v.readyState >= 1) {
+      show()
+    } else {
+      v.addEventListener('loadedmetadata', show, { once: true })
+    }
+  }, [])
 
   function togglePlay() {
     if (!videoRef.current) return
@@ -35,7 +46,6 @@ export default function MediaCoverage() {
                   <video
                     ref={videoRef}
                     src={MEDIA_VIDEO_URL}
-                    poster={MEDIA_COVERAGE_POSTER}
                     className="w-full h-auto rounded-xl object-cover"
                     preload="metadata"
                     onEnded={() => setIsPlaying(false)}

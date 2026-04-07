@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { Star, ArrowRight } from 'lucide-react'
 import ServiceCityHero from './ServiceCityHero'
@@ -138,7 +140,9 @@ export default function ServiceCityContent({ page, offers, faqs, testimonials, b
                       </div>
                       <blockquote className="text-gray-700 italic leading-relaxed mb-4">&quot;{t.content}&quot;</blockquote>
                       <div className="font-semibold text-gray-900">{displayName}</div>
-                      {t.location && <div className="text-sm text-muted-foreground">{t.location}</div>}
+                      {t.location && t.location.trim() && (
+                        <div className="text-sm text-muted-foreground">{t.location}</div>
+                      )}
                     </div>
                   )
                 })}
@@ -209,15 +213,21 @@ export default function ServiceCityContent({ page, offers, faqs, testimonials, b
               {blogPosts.map((post) => (
                 <Link key={post.id} href={`/carnet/${post.slug}`} className="group block">
                   <div className="bg-white rounded-xl overflow-hidden shadow-card hover:shadow-elevated transition-shadow">
-                    {post.cover_image_url && (
-                      // eslint-disable-next-line @next/next/no-img-element
+                    <div className="relative h-40 bg-gray-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={post.cover_image_url}
+                        src={post.cover_image_url ?? ''}
                         alt={post.title}
-                        className="w-full h-40 object-cover"
+                        className="w-full h-full object-cover"
                         loading="lazy"
+                        onError={(e) => {
+                          const el = e.currentTarget
+                          el.style.display = 'none'
+                          const parent = el.parentElement
+                          if (parent) parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-4xl">💡</div>'
+                        }}
                       />
-                    )}
+                    </div>
                     <div className="p-5">
                       <h3 className="font-bold text-foreground group-hover:text-primary transition-colors mb-2 line-clamp-2">
                         {post.title}

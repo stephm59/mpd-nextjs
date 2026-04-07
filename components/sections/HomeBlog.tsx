@@ -80,13 +80,19 @@ export default function HomeBlog({ initialData }: Props) {
                 key={article.id}
                 className="overflow-hidden hover:shadow-elevated transition-all duration-300 transform hover:scale-105 bg-white border border-gray-200"
               >
-                <div className="relative aspect-[4/3] overflow-hidden">
+                <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={article.cover_image_url ?? 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400&h=300&fit=crop'}
+                    src={article.cover_image_url ?? ''}
                     alt={article.title}
                     className="w-full h-full object-cover"
                     loading="lazy"
+                    onError={(e) => {
+                      const el = e.currentTarget
+                      el.style.display = 'none'
+                      const parent = el.parentElement
+                      if (parent) parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-5xl">💡</div>'
+                    }}
                   />
                   <div className="absolute top-4 left-4">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getCategoryColor(article.services?.name)}`}>
