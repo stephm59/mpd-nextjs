@@ -105,42 +105,48 @@ export default function ServiceCityContent({ page, offers, faqs, testimonials, b
       {/* 5. M6 media coverage */}
       <MediaCoverage />
 
-      {/* 6. Avis clients */}
-      {testimonials.length > 0 && (
-        <section className="py-20 bg-background">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <Star className="w-8 h-8 text-primary fill-primary" />
-                <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-                  Ce que disent nos clients
-                </h2>
+      {/* 6. Avis clients — localisés en priorité */}
+      {testimonials.length > 0 && (() => {
+        const cityName = city.name.toLowerCase()
+        const local = testimonials.filter(t => t.location?.toLowerCase().includes(cityName))
+        const others = testimonials.filter(t => !t.location?.toLowerCase().includes(cityName))
+        const displayed = [...local, ...others].slice(0, 6)
+        return (
+          <section className="py-20 bg-background">
+            <div className="container mx-auto px-4">
+              <div className="text-center mb-16">
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <Star className="w-8 h-8 text-primary fill-primary" />
+                  <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+                    Ce que disent nos clients
+                  </h2>
+                </div>
+                <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                  Plus de 600 avis positifs sur Google témoignent de notre engagement envers la qualité.
+                </p>
               </div>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                Plus de 600 avis positifs sur Google témoignent de notre engagement envers la qualité.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {testimonials.slice(0, 6).map((t) => {
-                const parts = t.author_name.split(' ')
-                const displayName = `${parts[0]}${parts[1] ? ' ' + parts[1].charAt(0) + '.' : ''}`
-                return (
-                  <div key={t.id} className="bg-white rounded-xl p-8 border border-gray-200 hover:shadow-elevated transition-shadow">
-                    <div className="flex gap-1 mb-4">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`w-5 h-5 ${i < t.rating ? 'fill-rating text-rating' : 'text-gray-200'}`} />
-                      ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                {displayed.map((t) => {
+                  const parts = t.author_name.split(' ')
+                  const displayName = `${parts[0]}${parts[1] ? ' ' + parts[1].charAt(0) + '.' : ''}`
+                  return (
+                    <div key={t.id} className="bg-white rounded-xl p-8 border border-gray-200 hover:shadow-elevated transition-shadow">
+                      <div className="flex gap-1 mb-4">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className={`w-5 h-5 ${i < t.rating ? 'fill-rating text-rating' : 'text-gray-200'}`} />
+                        ))}
+                      </div>
+                      <blockquote className="text-gray-700 italic leading-relaxed mb-4">&quot;{t.content}&quot;</blockquote>
+                      <div className="font-semibold text-gray-900">{displayName}</div>
+                      {t.location && <div className="text-sm text-muted-foreground">{t.location}</div>}
                     </div>
-                    <blockquote className="text-gray-700 italic leading-relaxed mb-4">&quot;{t.content}&quot;</blockquote>
-                    <div className="font-semibold text-gray-900">{displayName}</div>
-                    {t.location && <div className="text-sm text-muted-foreground">{t.location}</div>}
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
-          </div>
-        </section>
-      )}
+          </section>
+        )
+      })()}
 
       {/* 7. Pourquoi nous */}
       <div className="bg-muted/50">

@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import StickyCallBar from '@/components/ui/StickyCallBar'
+import LocalReviewsWidget from '@/components/widgets/LocalReviewsWidget'
+import ChatDevisButton from '@/components/widgets/ChatDevisButton'
 
 export const metadata: Metadata = {
   title: "Mon p'tit Dépanneur : Chauffagiste, Serrurier, Plombier (Lille)",
@@ -47,6 +50,9 @@ export default function RootLayout({
       </head>
       <body style={{ fontFamily: "'Inter', sans-serif" }}>
         {children}
+        <StickyCallBar />
+        <LocalReviewsWidget />
+        <ChatDevisButton />
       </body>
     </html>
   )

@@ -77,6 +77,7 @@ export default function BlogPostContent({ post, faqs, relatedPosts }: Props) {
               src={post.cover_image_url}
               alt={post.title}
               fill
+              unoptimized
               className="object-cover"
               priority
             />
@@ -87,7 +88,7 @@ export default function BlogPostContent({ post, faqs, relatedPosts }: Props) {
       {/* Contenu */}
       <article className="container mx-auto px-4 max-w-4xl pb-12">
         {post.content && (
-          <div className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-primary prose-img:rounded-xl prose-img:mx-auto">
+          <div className="prose prose-lg max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-img:rounded-xl prose-img:mx-auto prose-li:text-gray-700 prose-strong:text-gray-900">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {post.content}
             </ReactMarkdown>
@@ -144,6 +145,7 @@ export default function BlogPostContent({ post, faqs, relatedPosts }: Props) {
                         src={related.cover_image_url}
                         alt={related.title}
                         fill
+                        unoptimized
                         className="object-cover"
                       />
                     </div>
