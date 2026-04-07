@@ -1,97 +1,113 @@
 'use client'
 
-import { useState } from 'react'
-import { Play, Pause, Tv } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Tv, Star, Phone, Play, Pause } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ContactForm from '@/components/forms/ContactForm'
+import { MEDIA_COVERAGE_POSTER } from '@/config/media'
 
-const R2 = 'https://pub-ee5d8554679a4a23a82caac56686992a.r2.dev'
-const MEDIA_VIDEO_URL = `${R2}/video-entretien-chaudiere.mp4`
-const MEDIA_POSTER = `${R2}/logo-mon-ptit-depanneur-contour-blanc.webp`
+const MEDIA_VIDEO_URL = 'https://pub-ee5d8554679a4a23a82caac56686992a.r2.dev/video-entretien-chaudiere.mp4'
 
 export default function MediaCoverage() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isFormOpen, setIsFormOpen] = useState(false)
-  const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null)
-
-  function handleRef(el: HTMLVideoElement | null) {
-    setVideoEl(el)
-  }
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   function togglePlay() {
-    if (!videoEl) return
+    if (!videoRef.current) return
     if (isPlaying) {
-      videoEl.pause()
-      setIsPlaying(false)
+      videoRef.current.pause()
     } else {
-      videoEl.play()
-      setIsPlaying(true)
+      videoRef.current.play()
     }
+    setIsPlaying(!isPlaying)
   }
 
   return (
     <>
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-primary">
         <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              {/* Video */}
-              <div className="relative rounded-2xl overflow-hidden shadow-elevated group">
-                <video
-                  ref={handleRef}
-                  src={MEDIA_VIDEO_URL}
-                  poster={MEDIA_POSTER}
-                  className="w-full aspect-video object-cover"
-                  playsInline
-                  onEnded={() => setIsPlaying(false)}
-                />
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/20 transition-colors">
-                  <button
-                    onClick={togglePlay}
-                    className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors shadow-elevated"
-                    aria-label={isPlaying ? 'Pause' : 'Lecture'}
-                  >
-                    {isPlaying ? (
-                      <Pause className="w-6 h-6 text-primary" />
-                    ) : (
-                      <Play className="w-6 h-6 text-primary ml-1" />
-                    )}
-                  </button>
-                </div>
-                {/* VU À LA TV badge */}
-                <div className="absolute top-4 left-4 flex items-center gap-2 bg-accent text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-md">
-                  <Tv className="w-4 h-4" />
-                  VU À LA TV
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+            {/* Vidéo */}
+            <div className="relative">
+              <div className="relative bg-white rounded-2xl p-2 shadow-elevated">
+                <div className="relative">
+                  <video
+                    ref={videoRef}
+                    src={MEDIA_VIDEO_URL}
+                    poster={MEDIA_COVERAGE_POSTER}
+                    className="w-full h-auto rounded-xl object-cover"
+                    preload="metadata"
+                    onEnded={() => setIsPlaying(false)}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <button
+                      onClick={togglePlay}
+                      className="w-16 h-16 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-elevated transition-all hover:scale-110"
+                      aria-label={isPlaying ? 'Mettre en pause' : 'Lire la vidéo'}
+                    >
+                      {isPlaying ? (
+                        <Pause className="w-6 h-6 text-primary" />
+                      ) : (
+                        <Play className="w-6 h-6 text-primary ml-1" />
+                      )}
+                    </button>
+                  </div>
+                  <div className="absolute top-4 left-4">
+                    <span className="bg-accent text-white px-3 py-1 rounded-full text-sm font-bold">
+                      VU À LA TV
+                    </span>
+                  </div>
                 </div>
               </div>
+            </div>
 
-              {/* Text */}
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <Tv className="w-8 h-8 text-primary" />
-                  <span className="text-primary font-semibold uppercase tracking-wide text-sm">
-                    Vu sur M6
-                  </span>
+            {/* Texte */}
+            <div className="text-white">
+              <div className="flex items-center gap-3 mb-6">
+                <Tv className="w-8 h-8 text-white" />
+                <h2 className="text-3xl md:text-4xl font-bold">Au JT de M6</h2>
+              </div>
+
+              <div className="space-y-6 mb-8">
+                <p className="text-lg leading-relaxed text-white/90">
+                  Sylvie, victime d&apos;un malaise à cause d&apos;une fuite de monoxyde de
+                  carbone qui s&apos;échappait de sa chaudière, témoigne sur M6.
+                </p>
+                <p className="text-lg leading-relaxed text-white/90">
+                  David Vanmarcke, gérant de Mon P&apos;tit Dépanneur, est intervenu
+                  immédiatement pour résoudre cette situation d&apos;urgence et
+                  potentiellement mortelle.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 mb-8">
+                <div className="flex gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 fill-rating text-rating" />
+                  ))}
                 </div>
-                <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-                  Mon p&apos;tit Dépanneur à la télévision
-                </h2>
-                <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-                  Notre savoir-faire reconnu a été mis en lumière lors d&apos;un reportage sur M6.
-                  David, notre fondateur, vous explique comment entretenir votre chaudière pour
-                  optimiser sa longévité et réduire votre consommation d&apos;énergie.
-                </p>
-                <p className="text-muted-foreground leading-relaxed mb-8">
-                  Depuis plus de 20 ans, nous intervenons à Lille et dans toute la métropole pour
-                  dépanner, entretenir et installer vos équipements de chauffage, plomberie,
-                  serrurerie et vitrerie.
-                </p>
+                <span className="text-white font-semibold">Recommandé par nos clients</span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4">
                 <Button
+                  variant="outline"
                   size="lg"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
+                  className="bg-white text-primary border-white hover:bg-white/90 font-semibold px-8"
                   onClick={() => setIsFormOpen(true)}
                 >
-                  Demander un devis gratuit
+                  Recevoir un devis
+                </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  className="bg-accent text-white hover:bg-accent/90 font-bold px-8"
+                >
+                  <a href="tel:0328534868" className="inline-flex items-center gap-2">
+                    <Phone className="w-5 h-5" />
+                    03 28 53 48 68
+                  </a>
                 </Button>
               </div>
             </div>
@@ -103,7 +119,7 @@ export default function MediaCoverage() {
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         title="Demander un devis gratuit"
-        description="Remplissez ce formulaire et nous vous recontacterons rapidement."
+        description="Suite à votre demande de devis, nous vous recontacterons rapidement pour évaluer vos besoins et vous proposer une solution sur-mesure."
       />
     </>
   )

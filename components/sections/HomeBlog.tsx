@@ -13,17 +13,19 @@ interface BlogPost {
   excerpt: string | null
   cover_image_url: string | null
   published_at: string | null
+  services?: { name: string; slug: string } | null
 }
 
 interface Props {
   initialData: BlogPost[]
 }
 
-function getCategoryColor(slug: string): string {
-  if (slug.includes('pompe') || slug.includes('chauffage')) return 'bg-blue-100 text-blue-700'
-  if (slug.includes('plomb')) return 'bg-cyan-100 text-cyan-700'
-  if (slug.includes('serrurier') || slug.includes('serrur')) return 'bg-green-100 text-green-700'
-  if (slug.includes('vitr')) return 'bg-purple-100 text-purple-700'
+function getCategoryColor(serviceName?: string | null): string {
+  const s = serviceName?.toLowerCase() ?? ''
+  if (s.includes('pompe') || s.includes('chauffage')) return 'bg-blue-100 text-blue-700'
+  if (s.includes('plomberie')) return 'bg-cyan-100 text-cyan-700'
+  if (s.includes('serrurerie')) return 'bg-green-100 text-green-700'
+  if (s.includes('vitrerie')) return 'bg-purple-100 text-purple-700'
   return 'bg-gray-100 text-gray-700'
 }
 
@@ -87,8 +89,8 @@ export default function HomeBlog({ initialData }: Props) {
                     loading="lazy"
                   />
                   <div className="absolute top-4 left-4">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getCategoryColor(article.slug)}`}>
-                      Conseil
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getCategoryColor(article.services?.name)}`}>
+                      {article.services?.name ?? 'Conseil'}
                     </span>
                   </div>
                 </div>
@@ -115,16 +117,18 @@ export default function HomeBlog({ initialData }: Props) {
         </div>
 
         {/* Dots */}
-        <div className="flex justify-center gap-2 mb-8">
-          {Array.from({ length: maxIndex + 1 }).map((_, i) => (
-            <button
-              key={i}
-              className={`w-3 h-3 rounded-full transition-colors ${i === currentIndex ? 'bg-primary' : 'bg-gray-300'}`}
-              onClick={() => setCurrentIndex(i)}
-              aria-label={`Page ${i + 1}`}
-            />
-          ))}
-        </div>
+        {maxIndex > 0 && (
+          <div className="flex justify-center gap-2 mb-8">
+            {Array.from({ length: maxIndex + 1 }).map((_, i) => (
+              <button
+                key={i}
+                className={`w-3 h-3 rounded-full transition-colors ${i === currentIndex ? 'bg-primary' : 'bg-gray-300'}`}
+                onClick={() => setCurrentIndex(i)}
+                aria-label={`Page ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
 
         <div className="text-center">
           <Button asChild size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold px-8">

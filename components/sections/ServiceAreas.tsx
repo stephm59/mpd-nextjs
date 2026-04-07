@@ -1,79 +1,40 @@
 import { MapPin } from 'lucide-react'
 
-const zones = [
-  'Lille', 'Vieux-Lille', 'Lambersart', 'La Madeleine', 'Saint-André-lez-Lille',
-  'Lomme', 'Villeneuve-d\'Ascq', 'Marcq-en-Barœul', 'Bondues', 'Wambrechies',
-  'Roncq', 'Wasquehal', 'Roubaix', 'Tourcoing', 'Croix',
-  'Wattrelos', 'Mouvaux', 'Hem', 'Lys-lez-Lannoy', 'Lannoy',
-]
-
 export default function ServiceAreas() {
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-background">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 max-w-4xl mx-auto">
           <div className="flex items-center justify-center gap-3 mb-6">
             <MapPin className="w-8 h-8 text-primary" />
             <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-              Notre zone d&apos;intervention
+              Zones d&apos;intervention
             </h2>
           </div>
-          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Nous intervenons rapidement à Lille et dans toute la métropole lilloise —
-            chauffage, plomberie, serrurerie, vitrerie.
+          <p className="text-lg text-muted-foreground">
+            Nous nous déplaçons dans les quartiers de Lille (Vieux-Lille, Wazemmes, Vauban, Bois Blancs, Fives…) et dans les
+            communes comme Marcq-en-Barœul, La Madeleine, Lambersart, Wasquehal, Villeneuve-d&apos;Ascq, Croix, Bondues…
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto items-start">
-          {/* Map */}
-          <div className="rounded-2xl overflow-hidden shadow-elevated h-80 lg:h-full min-h-80">
+        <div className="max-w-6xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-elevated overflow-hidden">
             <iframe
-              src="https://www.google.com/maps/embed/v1/place?key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY&q=place_id:ChIJozkbGo_VwkcR1vXT4diHCcU"
-              width="100%"
-              height="100%"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2530.7059302239863!2d3.0639534767775842!3d50.6325794742331!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47c2d58f1a1b39a3%3A0xc50987d8e1d3f5d6!2sMon%20P&#39;tit%20D%C3%A9panneur!5e0!3m2!1sfr!2sfr!4v1757079283815!5m2!1sfr!2sfr"
+              className="w-full h-96 md:h-[500px]"
               style={{ border: 0 }}
               allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              title="Mon p'tit Dépanneur — carte"
+              title="Zones d'intervention Mon p'tit Dépanneur - Lille et environs"
             />
           </div>
 
-          {/* Zones */}
-          <div>
-            <div className="bg-gray-50 rounded-2xl p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <MapPin className="w-6 h-6 text-primary flex-shrink-0" />
-                <div>
-                  <p className="font-bold text-foreground">21 Rue Édouard Delesalle</p>
-                  <p className="text-muted-foreground">59000 Lille</p>
-                </div>
-              </div>
-
-              <h3 className="text-lg font-bold text-foreground mb-4">
-                Communes desservies
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {zones.map((zone) => (
-                  <span
-                    key={zone}
-                    className="px-3 py-1 bg-white border border-gray-200 rounded-full text-sm text-foreground hover:border-primary hover:text-primary transition-colors"
-                  >
-                    {zone}
-                  </span>
-                ))}
-                <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                  + toute la MEL
-                </span>
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  Intervention en moins d&apos;une heure dans Lille et ses communes limitrophes.
-                  Disponibles 7j/7 pour vos urgences.
-                </p>
-              </div>
-            </div>
+          <div className="mt-8 bg-white rounded-2xl shadow-elevated p-8 text-center">
+            <h3 className="text-xl font-bold text-foreground mb-4">Notre siège social</h3>
+            <p className="text-muted-foreground mb-1">Mon P&apos;tit Dépanneur</p>
+            <p className="text-muted-foreground mb-2">21 Rue Édouard Delesalle, 59000 Lille</p>
+            <p className="font-semibold text-primary">📞 03 28 53 48 68</p>
           </div>
         </div>
       </div>
