@@ -1,22 +1,14 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import './globals.css'
 import StickyCallBar from '@/components/ui/StickyCallBar'
 import LocalReviewsWidget from '@/components/widgets/LocalReviewsWidget'
 import ChatDevisButton from '@/components/widgets/ChatDevisButton'
 
-// TODO: remplacer par le vrai code de vérification Google Search Console
-const GSC_VERIFICATION = 'TODO_GSC_VERIFICATION_CODE'
-
-// GA4 est déjà configuré via G-N4MLHLMQKN (script inline dans <head>)
-// TODO: si l'ID GA4 change, le mettre à jour ici et dans le script ci-dessous
-
 export const metadata: Metadata = {
   title: "Mon p'tit Dépanneur : Chauffagiste, Serrurier, Plombier (Lille)",
-  description: 'Chauffagiste, Serrurier, Plombier à Lille - Intervention d\'urgence 24/7 - Devis gratuit',
+  description: "Chauffagiste, Serrurier, Plombier à Lille - Intervention d'urgence 24/7 - Devis gratuit",
   metadataBase: new URL('https://www.monptitdepanneur.fr'),
-  verification: {
-    google: GSC_VERIFICATION,
-  },
   openGraph: {
     type: 'website',
     locale: 'fr_FR',
@@ -42,26 +34,21 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
-        <script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-N4MLHLMQKN"
-        />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-N4MLHLMQKN');
-            `,
-          }}
-        />
       </head>
       <body style={{ fontFamily: "'Inter', sans-serif" }}>
         {children}
         <StickyCallBar />
         <LocalReviewsWidget />
         <ChatDevisButton />
+
+        {/* Google Analytics GA4 */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-N4MLHLMQKN"
+          strategy="afterInteractive"
+        />
+        <Script id="ga4" strategy="afterInteractive">
+          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-N4MLHLMQKN');`}
+        </Script>
       </body>
     </html>
   )
