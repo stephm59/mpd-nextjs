@@ -1,95 +1,61 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import type { Metadata } from 'next'
+import Script from 'next/script'
+import { createServerClient } from '@/lib/supabase/server'
+import { generateHomeJsonLd } from '@/lib/jsonld'
+import Header from '@/components/layout/Header'
+import Footer from '@/components/layout/Footer'
+import HomeHero from '@/components/sections/HomeHero'
+import HomeServices from '@/components/sections/HomeServices'
+import HomeTestimonials from '@/components/sections/HomeTestimonials'
+import HomeBlog from '@/components/sections/HomeBlog'
 
-export default function Home() {
+export const metadata: Metadata = {
+  title: "Mon p'tit Dépanneur : Chauffagiste, Serrurier, Plombier (Lille)",
+  description: "Chauffagiste, Serrurier, Plombier à Lille - Intervention d'urgence 24/7 - Devis gratuit. Entreprise locale, disponible 7j/7.",
+  alternates: { canonical: 'https://www.monptitdepanneur.fr' },
+  openGraph: {
+    title: "Mon p'tit Dépanneur : Chauffagiste, Serrurier, Plombier (Lille)",
+    description: "Services de réparation d'urgence 24/7 - Chauffage, Plomberie, Serrurerie",
+    url: 'https://www.monptitdepanneur.fr',
+    images: [{ url: 'https://pub-ee5d8554679a4a23a82caac56686992a.r2.dev/logo-mon-ptit-depanneur-contour-blanc.webp' }],
+  },
+}
+
+export default async function HomePage() {
+  const supabase = createServerClient()
+
+  const [{ data: testimonials }, { data: posts }] = await Promise.all([
+    supabase
+      .from('testimonials')
+      .select('*')
+      .eq('published', true)
+      .order('created_at', { ascending: false })
+      .limit(6),
+    supabase
+      .from('blog_posts')
+      .select('id, title, slug, excerpt, cover_image_url, published_at')
+      .eq('published', true)
+      .order('published_at', { ascending: false })
+      .limit(3),
+  ])
+
+  const jsonLd = generateHomeJsonLd()
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
+    <>
+      <Script
+        id="json-ld-home"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <Header />
+      <main>
+        <HomeHero />
+        <HomeServices />
+        <HomeTestimonials initialData={testimonials ?? []} />
+        <HomeBlog initialData={posts ?? []} />
       </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+      <Footer />
+    </>
+  )
 }

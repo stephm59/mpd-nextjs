@@ -1,7 +1,303 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'pub-ee5d8554679a4a23a82caac56686992a.r2.dev',
+      },
+      {
+        protocol: 'https',
+        hostname: 'bpwqdkznbmqwvvxpthhl.supabase.co',
+      },
+    ],
+  },
+  async redirects() {
+    return [
+      // SEO existantes
+      { source: '/sitemap_index.xml', destination: '/sitemap.xml', permanent: true },
+      { source: '/comment-retourner-un-pene-demi-tour', destination: '/carnet/comment-retourner-un-pene-demi-tour', permanent: true },
+      { source: '/comment-retourner-un-pene-demi-tour/', destination: '/carnet/comment-retourner-un-pene-demi-tour', permanent: true },
 
-export default nextConfig;
+      // Articles de blog
+      { source: '/nettoyage-de-canalisation', destination: '/carnet/7-astuces-deboucher-canalisations', permanent: true },
+      { source: '/nettoyage-de-canalisation/', destination: '/carnet/7-astuces-deboucher-canalisations', permanent: true },
+      { source: '/regler-reducteur-pression/', destination: '/carnet/regler-reducteur-pression', permanent: true },
+      { source: '/guide-systemes-plomberie/', destination: '/carnet/guide-systemes-plomberie', permanent: true },
+      { source: '/composant-serrure-porte/', destination: '/carnet/composant-serrure-porte', permanent: true },
+      { source: '/chauffe-eau/', destination: '/carnet/chauffe-eau', permanent: true },
+      { source: '/quel-cylindre-porte-entree/', destination: '/carnet/quel-cylindre-porte-entree', permanent: true },
+      { source: '/code-erreur-chaudiere/', destination: '/carnet/code-erreur-chaudiere-signification', permanent: true },
+      { source: '/tuyauterie-role/', destination: '/carnet/role-tuyauterie-plomberie', permanent: true },
+      { source: '/evier-bouche', destination: '/carnet/7-astuces-deboucher-canalisations', permanent: true },
+      { source: '/evier-bouche/', destination: '/carnet/7-astuces-deboucher-canalisations', permanent: true },
+      { source: '/gaz-dans-vitrages-quelle-utilite/', destination: '/carnet/gaz-dans-vitrages-quelle-utilite', permanent: true },
+
+      // Pages service-ville
+      { source: '/plomberie-lille', destination: '/plombier-lille', permanent: true },
+      { source: '/pompe-chaleur-lille', destination: '/pompe-a-chaleur-lille', permanent: true },
+      { source: '/plombier-wasquehal/', destination: '/plombier-lille', permanent: true },
+      { source: '/plomberie-wasquehal', destination: '/plombier-lille', permanent: true },
+      { source: '/plomberie-wasquehal/', destination: '/plombier-lille', permanent: true },
+      { source: '/serrurier-hellemmes', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-hellemmes/', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurerie-hellemmes', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurerie-hellemmes/', destination: '/serrurier-lille', permanent: true },
+
+      // Pages auteur et pagination
+      { source: '/author/yamile/page/2/', destination: '/carnet', permanent: true },
+      { source: '/author/yamile/page/5/', destination: '/carnet', permanent: true },
+      { source: '/author/yamile/feed/', destination: '/', permanent: true },
+      { source: '/lecture-compteur-eau/1000', destination: '/carnet/lecture-compteur-eau', permanent: true },
+      { source: '/lecture-compteur-eau', destination: '/carnet/lecture-compteur-eau', permanent: true },
+      { source: '/lecture-compteur-eau/', destination: '/carnet/lecture-compteur-eau', permanent: true },
+
+      // Pages service-ville supplémentaires
+      { source: '/plombier-faches-thumesnil/', destination: '/plombier-lille', permanent: true },
+      { source: '/serrurier-wasquehal-2/', destination: '/serrurier-lille', permanent: true },
+      { source: '/plombier-beaucamps-ligny/', destination: '/plombier-lille', permanent: true },
+
+      // Blog vers carnet
+      { source: '/blog', destination: '/carnet', permanent: true },
+      { source: '/blog/', destination: '/carnet', permanent: true },
+      { source: '/blog/page/:path*', destination: '/carnet', permanent: true },
+
+      // WordPress obsolètes
+      { source: '/contact/:path*', destination: '/', permanent: true },
+      { source: '/wp-content/:path*', destination: '/', permanent: true },
+
+      // Serrurerie marques
+      { source: '/serrurier-fichet-lille', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-fichet-lille/', destination: '/serrurier-lille', permanent: true },
+
+      // Feeds RSS
+      { source: '/plombier-sainghin-en-weppes/feed/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-fleurbaix/feed/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-emmerin/feed/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-wasquehal/feed/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-villeneuve-d-ascq/feed/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-lezennes/feed/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-wavrin/feed/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-wattignies/feed/', destination: '/plombier-lille', permanent: true },
+      { source: '/chauffagiste-lille/feed/', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/category/serrurerie/feed/', destination: '/carnet', permanent: true },
+      { source: '/category/:slug/feed/', destination: '/carnet', permanent: true },
+
+      // Interventions obsolètes
+      { source: '/interventions-serrurerie', destination: '/serrurier-lille', permanent: true },
+      { source: '/interventions-serrurerie/', destination: '/serrurier-lille', permanent: true },
+      { source: '/interventions-plomberie', destination: '/plombier-lille', permanent: true },
+      { source: '/interventions-plomberie/', destination: '/plombier-lille', permanent: true },
+      { source: '/interventions-chauffagerie', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/interventions-chauffagerie/', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/accueil/feed/', destination: '/', permanent: true },
+
+      // Service-ville voisines
+      { source: '/serrurier-lambersart', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-lambersart/', destination: '/serrurier-lille', permanent: true },
+      { source: '/renovation-salle-de-bains-lomme', destination: '/renovation-salle-de-bains-lille', permanent: true },
+      { source: '/renovation-salle-de-bains-lomme/', destination: '/renovation-salle-de-bains-lille', permanent: true },
+      { source: '/chauffagiste-lambersart', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-lambersart/', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/vitrier-villeneuve-d-ascq', destination: '/vitrier-lille', permanent: true },
+      { source: '/vitrier-villeneuve-d-ascq/', destination: '/vitrier-lille', permanent: true },
+
+      // Anciennes pages générales
+      { source: '/accueil', destination: '/', permanent: true },
+      { source: '/services', destination: '/', permanent: true },
+      { source: '/nous-contacter', destination: '/', permanent: true },
+      { source: '/plan-dacces', destination: '/', permanent: true },
+      { source: '/plan-dacces/', destination: '/', permanent: true },
+      { source: '/blog-2', destination: '/carnet', permanent: true },
+
+      // URLs malformées
+      { source: '/chauffagiste-lil', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-lil/', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/plombier---lille', destination: '/plombier-lille', permanent: true },
+
+      // Services techniques
+      { source: '/installation-serrure-lille', destination: '/serrurier-lille', permanent: true },
+      { source: '/ouverture-porte-lille', destination: '/serrurier-lille', permanent: true },
+      { source: '/blindage-porte-lille', destination: '/serrurier-lille', permanent: true },
+      { source: '/changement-barillet-lille', destination: '/serrurier-lille', permanent: true },
+      { source: '/detartrage-chaudiere-lille', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/depannage-chaudiere-lille', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/installation-chaudiere-lille', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/remplacement-chaudiere-lille', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/entretien-chaudiere-lille', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/reparation-chaudiere-lille', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/recherche-fuite-eau-lille', destination: '/plombier-lille', permanent: true },
+      { source: '/debouchage-canalisation-lille', destination: '/plombier-lille', permanent: true },
+      { source: '/degorgement-canalisation-lille', destination: '/plombier-lille', permanent: true },
+      { source: '/salle-bains-lille', destination: '/renovation-salle-de-bains-lille', permanent: true },
+      { source: '/installation-robinet-thermostatique-lille', destination: '/plombier-lille', permanent: true },
+
+      // Articles blog divers
+      { source: '/raccord-dielectrique', destination: '/carnet/raccord-dielectrique', permanent: true },
+      { source: '/raccord-dielectrique/', destination: '/carnet/raccord-dielectrique', permanent: true },
+      { source: '/pompe-chaleur-haubourdin', destination: '/pompe-a-chaleur-lille', permanent: true },
+      { source: '/pompe-chaleur-haubourdin/', destination: '/pompe-a-chaleur-lille', permanent: true },
+      { source: '/serrurier-marquette-lez-lille-2', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-marquette-lez-lille-2/', destination: '/serrurier-lille', permanent: true },
+      { source: '/salle-bains-lille/feed', destination: '/renovation-salle-de-bains-lille', permanent: true },
+      { source: '/salle-bains-lille/feed/', destination: '/renovation-salle-de-bains-lille', permanent: true },
+      { source: '/avantages-inconvenients-pompe-chaleur', destination: '/carnet/avantages-inconvenients-pompe-chaleur', permanent: true },
+      { source: '/avantages-inconvenients-pompe-chaleur/', destination: '/carnet/avantages-inconvenients-pompe-chaleur', permanent: true },
+
+      // Marques
+      { source: '/serrurier-bricard-lille', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-iseo-lille', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-city-lille', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-vachette-lille', destination: '/serrurier-lille', permanent: true },
+      { source: '/plombier-atlantic-lille', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-grohe-lille', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-porcher-lille', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-delabie-lille', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-geberit-lille', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-jacob-delafon-lille', destination: '/plombier-lille', permanent: true },
+      { source: '/chauffagiste-chappee-lille', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-saunier-duval-lille', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-vaillant-lille', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-viessman-lille', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-frisquet-lille', destination: '/chauffagiste-lille', permanent: true },
+
+      // Plomberie communes voisines
+      { source: '/plombier-lambersart', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-lambersart/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-lomme', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-lomme/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-hellemmes', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-hellemmes/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-saint-andre-lez-lille', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-saint-andre-lez-lille/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-ronchin', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-ronchin/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-loos', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-loos/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-marcq-en-baroeul', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-marcq-en-baroeul/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-haubourdin', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-haubourdin/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-wambrechies', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-wambrechies/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-marquette-lez-lille', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-marquette-lez-lille/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-croix', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-croix/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-seclin', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-seclin/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-bondues', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-bondues/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-capinghem', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-capinghem/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-fournes-en-weppes', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-fournes-en-weppes/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-fleurbaix', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-fleurbaix/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-sainghin-en-weppes', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-sainghin-en-weppes/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-wavrin', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-wavrin/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-emmerin', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-emmerin/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-wattignies', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-wattignies/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-lezennes', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-lezennes/', destination: '/plombier-lille', permanent: true },
+
+      // Serrurerie communes voisines
+      { source: '/serrurier-lomme', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-lomme/', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-wambrechies', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-wambrechies/', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-haubourdin', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-haubourdin/', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-marcq-en-baroeul', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-marcq-en-baroeul/', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-la-madeleine', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-la-madeleine/', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-marquette-lez-lille', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-marquette-lez-lille/', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-croix', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-croix/', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-loos', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-loos/', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-seclin', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-seclin/', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-wattignies', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-wattignies/', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-lille-fives', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-lille-fives/', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-faches-thumesnil', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-faches-thumesnil/', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-englos', destination: '/serrurier-lille', permanent: true },
+      { source: '/serrurier-englos/', destination: '/serrurier-lille', permanent: true },
+
+      // Chauffagiste communes voisines
+      { source: '/chauffagiste-lomme', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-lomme/', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-hellemmes', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-hellemmes/', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-loos', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-loos/', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-ronchin', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-ronchin/', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-haubourdin', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-haubourdin/', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-seclin', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-seclin/', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-bondues', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-bondues/', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-wattignies', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-wattignies/', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-marcq-en-baroeul', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-marcq-en-baroeul/', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-villeneuve-dascq', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-villeneuve-dascq/', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-wasquehal', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-wasquehal/', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-lompret', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-lompret/', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-wambrechies', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/chauffagiste-wambrechies/', destination: '/chauffagiste-lille', permanent: true },
+
+      // Vitrerie communes voisines
+      { source: '/vitrier-hellemmes', destination: '/vitrier-lille', permanent: true },
+      { source: '/vitrier-hellemmes/', destination: '/vitrier-lille', permanent: true },
+      { source: '/vitrier-ronchin', destination: '/vitrier-lille', permanent: true },
+      { source: '/vitrier-ronchin/', destination: '/vitrier-lille', permanent: true },
+      { source: '/vitrier-croix', destination: '/vitrier-lille', permanent: true },
+      { source: '/vitrier-croix/', destination: '/vitrier-lille', permanent: true },
+      { source: '/vitrier-villeneuve-dascq', destination: '/vitrier-lille', permanent: true },
+      { source: '/vitrier-villeneuve-dascq/', destination: '/vitrier-lille', permanent: true },
+
+      // Mobile obsolètes
+      { source: '/mobile/plombier-bondues', destination: '/plombier-lille', permanent: true },
+
+      // Articles blog obsolètes
+      { source: '/fuite-chez-moi', destination: '/carnet/prevenir-fuite-eau', permanent: true },
+      { source: '/fuite-chez-moi/', destination: '/carnet/prevenir-fuite-eau', permanent: true },
+      { source: '/different-types-serrures', destination: '/carnet/composant-serrure-porte', permanent: true },
+      { source: '/different-types-serrures/', destination: '/carnet/composant-serrure-porte', permanent: true },
+      { source: '/guide-entretien-ballon-eau-chaude', destination: '/carnet/choisir-chauffe-eau', permanent: true },
+      { source: '/guide-entretien-ballon-eau-chaude/', destination: '/carnet/choisir-chauffe-eau', permanent: true },
+      { source: '/mitigeur-panne', destination: '/carnet/guide-systemes-plomberie', permanent: true },
+      { source: '/mitigeur-panne/', destination: '/carnet/guide-systemes-plomberie', permanent: true },
+      { source: '/vanne', destination: '/carnet/guide-systemes-plomberie', permanent: true },
+      { source: '/vanne/', destination: '/carnet/guide-systemes-plomberie', permanent: true },
+      { source: '/mitigeurs', destination: '/carnet/guide-systemes-plomberie', permanent: true },
+      { source: '/mitigeurs/', destination: '/carnet/guide-systemes-plomberie', permanent: true },
+      { source: '/cintrage', destination: '/carnet/types-tuyauterie', permanent: true },
+      { source: '/cintrage/', destination: '/carnet/types-tuyauterie', permanent: true },
+      { source: '/au-secours-ma-chasse-deau-ne-fonctionne-plus', destination: '/carnet/chasse-eau-ne-fonctionne-plus', permanent: true },
+      { source: '/au-secours-ma-chasse-deau-ne-fonctionne-plus/', destination: '/carnet/chasse-eau-ne-fonctionne-plus', permanent: true },
+      { source: '/fuite-du-groupe-de-securite-de-votre-chauffe-eau-pas-de-panique', destination: '/carnet/reparer-fuite-eau', permanent: true },
+      { source: '/fuite-du-groupe-de-securite-de-votre-chauffe-eau-pas-de-panique/', destination: '/carnet/reparer-fuite-eau', permanent: true },
+      { source: '/variation-temperatures-plomberie', destination: '/carnet/variation-temperatures-plomberie', permanent: true },
+      { source: '/variation-temperatures-plomberie/', destination: '/carnet/variation-temperatures-plomberie', permanent: true },
+    ]
+  },
+}
+
+export default nextConfig
