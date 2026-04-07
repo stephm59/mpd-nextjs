@@ -6,8 +6,13 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import HomeHero from '@/components/sections/HomeHero'
 import HomeServices from '@/components/sections/HomeServices'
+import MediaCoverage from '@/components/sections/MediaCoverage'
+import QualityLabels from '@/components/sections/QualityLabels'
+import BeforeAfter from '@/components/sections/BeforeAfter'
 import HomeTestimonials from '@/components/sections/HomeTestimonials'
+import BrandPartners from '@/components/sections/BrandPartners'
 import HomeBlog from '@/components/sections/HomeBlog'
+import ServiceAreas from '@/components/sections/ServiceAreas'
 
 export const metadata: Metadata = {
   title: "Mon p'tit Dépanneur : Chauffagiste, Serrurier, Plombier (Lille)",
@@ -36,7 +41,7 @@ export default async function HomePage() {
       .select('id, title, slug, excerpt, cover_image_url, published_at')
       .eq('published', true)
       .order('published_at', { ascending: false })
-      .limit(3),
+      .limit(9),
   ])
 
   const jsonLd = generateHomeJsonLd()
@@ -52,8 +57,13 @@ export default async function HomePage() {
       <main>
         <HomeHero />
         <HomeServices />
+        <MediaCoverage />
+        <QualityLabels />
+        <BeforeAfter />
         <HomeTestimonials initialData={testimonials ?? []} />
+        <BrandPartners />
         <HomeBlog initialData={posts ?? []} />
+        <ServiceAreas />
       </main>
       <Footer />
     </>

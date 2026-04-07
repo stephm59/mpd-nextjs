@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface Faq {
   id: string
@@ -85,10 +87,11 @@ export default function BlogPostContent({ post, faqs, relatedPosts }: Props) {
       {/* Contenu */}
       <article className="container mx-auto px-4 max-w-4xl pb-12">
         {post.content && (
-          <div
-            className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-primary"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
+          <div className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-primary prose-img:rounded-xl prose-img:mx-auto">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {post.content}
+            </ReactMarkdown>
+          </div>
         )}
 
         {/* FAQs */}

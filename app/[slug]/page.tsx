@@ -41,6 +41,26 @@ export async function generateStaticParams() {
   }))
 }
 
+async function fetchPageBySlug(serviceSlug: string, citySlug: string) {
+  const supabase = createServerClient()
+  const [{ data: service }, { data: city }] = await Promise.all([
+    supabase.from('services').select('id, slug, name').eq('slug', serviceSlug).maybeSingle(),
+    supabase.from('cities').select('id, slug, name').eq('slug', citySlug).maybeSingle(),
+  ])
+  if (!service || !city) return null
+
+  const { data: page } = await supabase
+    .from('service_city_pages')
+    .select('*')
+    .eq('published', true)
+    .eq('service_id', service.id)
+    .eq('city_id', city.id)
+    .maybeSingle()
+
+  if (!page) return null
+  return { ...page, services: service, cities: city }
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -50,20 +70,11 @@ export async function generateMetadata({
   const parsed = parseSlug(slug)
   if (!parsed) return {}
 
-  const supabase = createServerClient()
-  const { data: page } = await supabase
-    .from('service_city_pages')
-    .select('meta_title, meta_description, services(slug, name), cities(slug, name)')
-    .eq('published', true)
-    .filter('services.slug', 'eq', parsed.serviceSlug)
-    .filter('cities.slug', 'eq', parsed.citySlug)
-    .maybeSingle()
-
+  const page = await fetchPageBySlug(parsed.serviceSlug, parsed.citySlug)
   if (!page) return {}
-  const p = page as any
 
-  const title = p.meta_title || `${p.services.name} à ${p.cities.name} | Mon p'tit Dépanneur`
-  const description = p.meta_description || `${p.services.name} à ${p.cities.name} - Intervention rapide 24/7. Devis gratuit.`
+  const title = page.meta_title || `${page.services.name} à ${page.cities.name} | Mon p'tit Dépanneur`
+  const description = page.meta_description || `${page.services.name} à ${page.cities.name} - Intervention rapide 24/7. Devis gratuit.`
 
   return {
     title,
@@ -83,20 +94,12 @@ export default async function ServiceCityPage({
   if (!parsed) notFound()
 
   const { serviceSlug, citySlug } = parsed
+
+  const page = await fetchPageBySlug(serviceSlug, citySlug)
+
+  if (!page) notFound()
+
   const supabase = createServerClient()
-
-  const { data: pageData } = await supabase
-    .from('service_city_pages')
-    .select('*, services(id, slug, name), cities(id, slug, name)')
-    .eq('published', true)
-    .filter('services.slug', 'eq', serviceSlug)
-    .filter('cities.slug', 'eq', citySlug)
-    .maybeSingle()
-
-  if (!pageData) notFound()
-
-  const page = pageData as any
-
   const [{ data: offers }, { data: faqs }, { data: genericFaqs }, { data: testimonials }, { data: blogPosts }] =
     await Promise.all([
       supabase
