@@ -2,122 +2,183 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
-import { Menu, X, Phone } from 'lucide-react'
-import { LOGO_URL } from '@/config/media'
+import { Phone, Menu, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import ContactForm from '@/components/forms/ContactForm'
+import { cn } from '@/lib/utils'
 
-const NAV_LINKS = [
-  { label: 'Plomberie', href: '/plombier-lille' },
-  { label: 'Chauffage', href: '/chauffagiste-lille' },
-  { label: 'Climatisation', href: '/climatisation-lille' },
-  { label: 'Pompe à chaleur', href: '/pompe-a-chaleur-lille' },
-  { label: 'Salle de bains', href: '/renovation-salle-de-bains-lille' },
-  { label: 'Serrurerie', href: '/serrurier-lille' },
-  { label: 'Vitrerie', href: '/vitrier-lille' },
+const navigation = [
+  { name: 'Plombier', href: '/plombier-lille' },
+  { name: 'Chauffage', href: '/chauffagiste-lille' },
+  { name: 'Climatisation', href: '/climatisation-lille' },
+  { name: 'Pompe à chaleur', href: '/pompe-a-chaleur-lille' },
+  { name: 'Salle de bains', href: '/renovation-salle-de-bains-lille' },
+  { name: 'Serrurier', href: '/serrurier-lille' },
+  { name: 'Vitrier', href: '/vitrier-lille' },
 ]
 
 export default function Header() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [scrollY, setScrollY] = useState(0)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50)
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
+    setMounted(true)
+    const onScroll = () => setScrollY(window.scrollY)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  const isScrolled = mounted && scrollY > 50
+  const isCompact = scrollY > 100
+
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-white shadow-md py-2' : 'bg-white/95 backdrop-blur-sm py-4'
-      }`}
-    >
-      <div className="container mx-auto px-4 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <Image
-            src={LOGO_URL}
-            alt="Mon p'tit Dépanneur"
-            width={scrolled ? 100 : 120}
-            height={scrolled ? 40 : 48}
-            className="transition-all duration-300"
-            unoptimized
-          />
-        </Link>
-
-        {/* Desktop Nav */}
-        <nav className="hidden lg:flex items-center gap-1">
-          {NAV_LINKS.map(link => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-sm font-medium text-gray-700 hover:text-primary px-3 py-2 rounded-lg hover:bg-primary/5 transition-colors"
-            >
-              {link.label}
+    <>
+      <header
+        className={cn(
+          'absolute top-0 inset-x-0 z-50 transition-all duration-300 will-change-transform',
+          isScrolled
+            ? 'fixed bg-white/80 backdrop-blur-md text-foreground shadow-sm'
+            : 'text-white'
+        )}
+      >
+        <div className="container mx-auto px-4">
+          <div
+            className={cn(
+              'flex justify-between transition-all duration-300',
+              isScrolled ? 'items-center' : 'items-start',
+              isCompact ? 'py-2' : 'py-4'
+            )}
+          >
+            {/* Logo */}
+            <Link href="/" className="block">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://pub-ee5d8554679a4a23a82caac56686992a.r2.dev/logo-mon-ptit-depanneur-contour-blanc.webp"
+                alt="Mon p'tit Dépanneur"
+                className={cn(
+                  'w-auto transition-all duration-300',
+                  isScrolled ? 'h-12 md:h-16' : 'h-24 md:h-40'
+                )}
+                loading="eager"
+              />
             </Link>
-          ))}
-        </nav>
 
-        {/* CTA */}
-        <div className="flex items-center gap-3">
-          <a
-            href="tel:0328534868"
-            className="hidden md:flex items-center gap-2 text-primary font-semibold hover:underline"
-          >
-            <Phone size={16} />
-            03 28 53 48 68
-          </a>
-          <Link
-            href="/contact"
-            className="hidden sm:inline-flex bg-primary text-white font-semibold px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors text-sm"
-          >
-            Devis gratuit
-          </Link>
+            {/* Desktop Nav */}
+            <nav
+              className={cn(
+                'hidden lg:flex items-center space-x-6 transition-all duration-300',
+                !isScrolled && 'pt-6'
+              )}
+            >
+              {navigation.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    'transition-colors duration-200 font-medium relative pb-1',
+                    'hover:after:content-[""] hover:after:absolute hover:after:bottom-0 hover:after:left-0 hover:after:right-0 hover:after:h-0.5 hover:after:bg-red-600 hover:after:rounded-full',
+                    isScrolled
+                      ? 'text-foreground/90 hover:text-foreground'
+                      : 'text-white/90 hover:text-white'
+                  )}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
 
-          {/* Mobile burger */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            aria-label="Menu"
-          >
-            {isOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      {isOpen && (
-        <div className="lg:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t">
-          <nav className="container mx-auto px-4 py-4 space-y-1">
-            {NAV_LINKS.map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setIsOpen(false)}
-                className="block py-3 px-4 text-gray-700 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors font-medium"
-              >
-                {link.label}
-              </Link>
-            ))}
-            <div className="pt-4 border-t mt-4 space-y-3">
+            {/* CTA */}
+            <div
+              className={cn(
+                'flex items-center gap-4 transition-all duration-300',
+                !isScrolled && 'pt-4'
+              )}
+            >
+              <div className="hidden sm:block">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    'h-10 transition-colors duration-300',
+                    isScrolled
+                      ? 'bg-white text-foreground border-border hover:bg-secondary'
+                      : 'bg-black text-white border-black hover:bg-black/90'
+                  )}
+                  onClick={() => setIsFormOpen(true)}
+                >
+                  Devis gratuit
+                </Button>
+              </div>
               <a
                 href="tel:0328534868"
-                className="flex items-center gap-2 text-primary font-semibold px-4"
+                className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-white hover:bg-accent/90 transition-colors shadow-lg h-10"
+                aria-label="Appeler Mon p'tit Dépanneur"
               >
-                <Phone size={16} />
+                <Phone className="w-5 h-5" />
                 03 28 53 48 68
               </a>
-              <Link
-                href="/contact"
-                onClick={() => setIsOpen(false)}
-                className="block bg-primary text-white font-semibold px-4 py-3 rounded-lg text-center hover:bg-primary/90"
+
+              {/* Mobile burger */}
+              <button
+                className={cn(
+                  'lg:hidden p-2 transition-colors duration-300',
+                  isScrolled ? 'text-foreground' : 'text-white'
+                )}
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label="Menu"
               >
-                Devis gratuit
-              </Link>
+                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
             </div>
-          </nav>
+          </div>
+
+          {/* Mobile Nav */}
+          {isMenuOpen && (
+            <nav
+              className={cn(
+                'lg:hidden mt-4 pb-4 border-t pt-4 rounded-lg',
+                isScrolled
+                  ? 'border-border bg-white/90 backdrop-blur-md'
+                  : 'border-white/20 bg-black/60 backdrop-blur-md'
+              )}
+            >
+              <div className="flex flex-col space-y-3 px-4">
+                {navigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={cn(
+                      'font-medium py-2 transition-colors duration-200',
+                      isScrolled
+                        ? 'text-foreground/90 hover:text-foreground'
+                        : 'text-white/90 hover:text-white'
+                    )}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+                <a
+                  href="tel:0328534868"
+                  className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-lg font-medium"
+                >
+                  <Phone className="w-4 h-4" />
+                  03 28 53 48 68
+                </a>
+              </div>
+            </nav>
+          )}
         </div>
-      )}
-    </header>
+      </header>
+
+      <ContactForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        title="Demander un devis gratuit"
+        description="Remplissez ce formulaire et nous vous recontacterons rapidement pour établir votre devis personnalisé et sans engagement."
+      />
+    </>
   )
 }

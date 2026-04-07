@@ -1,47 +1,48 @@
 import Link from 'next/link'
+import { Droplets, Flame, Wind, Thermometer, Bath, Lock, Square } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
 
-const SERVICES = [
-  { name: 'Plombier Lille', href: '/plombier-lille', icon: '🔧', desc: 'Fuite, débouchage, installation' },
-  { name: 'Chauffagiste Lille', href: '/chauffagiste-lille', icon: '🔥', desc: 'Chaudière, entretien, panne' },
-  { name: 'Pompe à chaleur', href: '/pompe-a-chaleur-lille', icon: '♨️', desc: 'Installation et dépannage PAC' },
-  { name: 'Climatisation', href: '/climatisation-lille', icon: '❄️', desc: 'Pose et maintenance clim' },
-  { name: 'Salle de bains', href: '/renovation-salle-de-bains-lille', icon: '🛁', desc: 'Rénovation complète' },
-  { name: 'Serrurier Lille', href: '/serrurier-lille', icon: '🔑', desc: 'Ouverture de porte, blindage' },
-  { name: 'Vitrier Lille', href: '/vitrier-lille', icon: '🪟', desc: 'Remplacement de vitres' },
+const services = [
+  { id: 1, title: 'Plomberie', description: 'Réparation de fuites, débouchage de canalisations, remplacement de robinetterie et installation sanitaire.', icon: Droplets, emoji: '🔧', href: '/plombier-lille' },
+  { id: 2, title: 'Chauffage', description: 'Installation, entretien et dépannage de tous types de systèmes de chauffage pour votre confort.', icon: Flame, emoji: '🔥', href: '/chauffagiste-lille' },
+  { id: 3, title: 'Climatisation', description: 'Installation et maintenance de systèmes de climatisation pour un confort optimal toute l\'année.', icon: Wind, emoji: '❄️', href: '/climatisation-lille' },
+  { id: 4, title: 'Pompe à chaleur', description: 'Solutions écologiques et économiques avec installation et maintenance de pompes à chaleur.', icon: Thermometer, emoji: '♻️', href: '/pompe-a-chaleur-lille' },
+  { id: 5, title: 'Salle de bains', description: 'Rénovation complète, modernisation et aménagement de votre salle de bains sur mesure.', icon: Bath, emoji: '🚿', href: '/renovation-salle-de-bains-lille' },
+  { id: 6, title: 'Serrurerie', description: "Ouverture de porte, changement de serrure, blindage et sécurisation de votre domicile.", icon: Lock, emoji: '🔒', href: '/serrurier-lille' },
+  { id: 7, title: 'Vitrerie', description: 'Remplacement de vitres cassées, pose de double vitrage et réparation de fenêtres.', icon: Square, emoji: '🪟', href: '/vitrier-lille' },
 ]
 
 export default function HomeServices() {
   return (
-    <section className="py-16 bg-white">
-      <div className="container mx-auto px-4">
+    <section className="py-16 bg-muted/30">
+      <div className="container mx-auto px-6">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Nos services</h2>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            Des artisans qualifiés pour tous vos besoins à Lille et sa métropole
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            Nos services de proximité
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Des professionnels qualifiés pour tous vos besoins en dépannage, réparation et installation
           </p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {SERVICES.map(service => (
-            <Link
-              key={service.href}
-              href={service.href}
-              className="group bg-white border-2 border-gray-100 rounded-xl p-6 text-center hover:border-primary hover:shadow-soft transition-all"
-            >
-              <div className="text-4xl mb-3">{service.icon}</div>
-              <h3 className="font-bold text-gray-900 group-hover:text-primary transition-colors mb-1">
-                {service.name}
-              </h3>
-              <p className="text-sm text-gray-500">{service.desc}</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {services.map((service) => (
+            <Link key={service.id} href={service.href}>
+              <Card className="hover:shadow-elevated transition-all duration-300 border-border/50 transform hover:scale-[1.02] cursor-pointer h-full">
+                <CardContent className="p-6 pt-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0">
+                      <span className="text-3xl">{service.emoji}</span>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-foreground mb-2">{service.title}</h3>
+                      <p className="text-muted-foreground leading-relaxed">{service.description}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </Link>
           ))}
-          <Link
-            href="/contact"
-            className="bg-primary text-white rounded-xl p-6 text-center hover:bg-primary/90 transition-colors"
-          >
-            <div className="text-4xl mb-3">📞</div>
-            <h3 className="font-bold mb-1">Urgence ?</h3>
-            <p className="text-sm opacity-90">Appelez-nous maintenant</p>
-          </Link>
         </div>
       </div>
     </section>

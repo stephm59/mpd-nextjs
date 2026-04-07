@@ -1,8 +1,8 @@
 import type { Config } from 'tailwindcss'
 import tailwindcssAnimate from 'tailwindcss-animate'
 
-const config: Config = {
-  darkMode: 'class',
+export default {
+  darkMode: ['class'],
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
@@ -13,9 +13,7 @@ const config: Config = {
     container: {
       center: true,
       padding: '2rem',
-      screens: {
-        '2xl': '1400px',
-      },
+      screens: { '2xl': '1400px' },
     },
     extend: {
       colors: {
@@ -27,6 +25,7 @@ const config: Config = {
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
+          light: 'hsl(var(--primary-light))',
         },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
@@ -35,6 +34,7 @@ const config: Config = {
         urgent: {
           DEFAULT: 'hsl(var(--urgent))',
           foreground: 'hsl(var(--urgent-foreground))',
+          hover: 'hsl(var(--urgent-hover))',
         },
         success: {
           DEFAULT: 'hsl(var(--success))',
@@ -51,6 +51,7 @@ const config: Config = {
         accent: {
           DEFAULT: 'hsl(var(--accent))',
           foreground: 'hsl(var(--accent-foreground))',
+          light: 'hsl(var(--accent-light))',
         },
         popover: {
           DEFAULT: 'hsl(var(--popover))',
@@ -62,6 +63,7 @@ const config: Config = {
         },
         rating: {
           DEFAULT: 'hsl(var(--rating))',
+          foreground: 'hsl(var(--rating-foreground))',
         },
       },
       borderRadius: {
@@ -78,6 +80,10 @@ const config: Config = {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
+        'slide-in-left': {
+          '0%': { transform: 'translateX(-100%) translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateX(0) translateY(0)', opacity: '1' },
+        },
         'fade-in-up': {
           '0%': { opacity: '0', transform: 'translateY(20px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
@@ -86,17 +92,13 @@ const config: Config = {
           '0%': { opacity: '0', transform: 'translateY(-20px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
-        'slide-in-from-top': {
-          '0%': { transform: 'translateY(-100%)' },
-          '100%': { transform: 'translateY(0)' },
-        },
-        'slide-in-from-bottom': {
-          '0%': { transform: 'translateY(100%)' },
-          '100%': { transform: 'translateY(0)' },
+        'slide-in-right': {
+          '0%': { opacity: '0', transform: 'translateX(30px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
         },
         'bounce-gentle': {
           '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-5px)' },
+          '50%': { transform: 'translateY(-10px)' },
         },
         'pulse-slow': {
           '0%, 100%': { opacity: '1' },
@@ -106,20 +108,24 @@ const config: Config = {
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        'fade-in-up': 'fade-in-up 0.5s ease-out',
-        'fade-in-down': 'fade-in-down 0.5s ease-out',
-        'slide-in-from-top': 'slide-in-from-top 0.3s ease-out',
-        'slide-in-from-bottom': 'slide-in-from-bottom 0.3s ease-out',
+        'fade-in-up': 'fade-in-up 0.6s ease-out',
+        'fade-in-down': 'fade-in-down 0.6s ease-out',
+        'slide-in-left': 'slide-in-left 0.4s ease-out',
+        'slide-in-right': 'slide-in-right 0.4s ease-out',
         'bounce-gentle': 'bounce-gentle 2s ease-in-out infinite',
         'pulse-slow': 'pulse-slow 3s ease-in-out infinite',
       },
+      backgroundImage: {
+        'gradient-primary': 'var(--gradient-primary)',
+        'gradient-urgent': 'var(--gradient-urgent)',
+        'gradient-hero': 'var(--gradient-hero)',
+      },
       boxShadow: {
-        'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
-        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+        card: 'var(--shadow-card)',
+        elevated: 'var(--shadow-elevated)',
+        urgent: 'var(--shadow-urgent)',
       },
     },
   },
   plugins: [tailwindcssAnimate],
-}
-
-export default config
+} satisfies Config
