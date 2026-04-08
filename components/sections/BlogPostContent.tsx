@@ -2,7 +2,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 import { resolveBlogImage } from '@/lib/blog-image'
+import { HERO_VIDEO_URL, HERO_POSTER } from '@/config/media'
 
 interface Faq {
   id: string
@@ -43,25 +45,37 @@ interface Props {
 export default function BlogPostContent({ post, faqs, relatedPosts }: Props) {
   return (
     <>
-      {/* Hero article */}
-      <div className="bg-gray-50 pt-24 pb-8">
-        <div className="container mx-auto px-4 max-w-4xl">
+      {/* Hero article — video background */}
+      <div className="relative pt-24 pb-16 overflow-hidden min-h-[320px] flex items-end">
+        <video
+          src={HERO_VIDEO_URL}
+          poster={HERO_POSTER}
+          className="absolute inset-0 w-full h-full object-cover"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          aria-hidden="true"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/70" />
+        <div className="relative z-10 container mx-auto px-4 max-w-4xl">
           {post.services && (
             <Link
               href={`/${post.services.slug}-lille`}
-              className="inline-block text-sm font-semibold text-primary uppercase tracking-wide mb-4 hover:underline"
+              className="inline-block text-sm font-semibold text-white/80 uppercase tracking-widest mb-4 hover:text-white transition-colors"
             >
               {post.services.name}
             </Link>
           )}
-          <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight">
             {post.title}
           </h1>
           {post.excerpt && (
-            <p className="text-xl text-gray-600 leading-relaxed">{post.excerpt}</p>
+            <p className="text-lg md:text-xl text-white/85 leading-relaxed max-w-3xl">{post.excerpt}</p>
           )}
           {post.published_at && (
-            <time className="block mt-4 text-sm text-gray-400">
+            <time className="block mt-4 text-sm text-white/60">
               Publié le {new Date(post.published_at).toLocaleDateString('fr-FR', {
                 year: 'numeric', month: 'long', day: 'numeric',
               })}
@@ -89,8 +103,8 @@ export default function BlogPostContent({ post, faqs, relatedPosts }: Props) {
       {/* Contenu */}
       <article className="container mx-auto px-4 max-w-4xl pb-12">
         {post.content && (
-          <div className="prose prose-lg max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-img:rounded-xl prose-img:mx-auto prose-li:text-gray-700 prose-strong:text-gray-900">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          <div className="prose prose-lg max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-h2:text-2xl prose-h2:mt-10 prose-h3:text-xl prose-h3:mt-8 prose-p:text-gray-700 prose-p:leading-relaxed prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-img:rounded-xl prose-img:mx-auto prose-li:text-gray-700 prose-strong:text-gray-900 prose-blockquote:border-primary prose-blockquote:text-gray-600 prose-ul:my-4 prose-ol:my-4 prose-table:text-sm">
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
               {post.content}
             </ReactMarkdown>
           </div>

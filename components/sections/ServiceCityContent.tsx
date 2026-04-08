@@ -59,15 +59,21 @@ interface PageData {
   cities: { id: string; name: string; slug: string }
 }
 
+interface NearbyCity {
+  name: string
+  slug: string
+}
+
 interface Props {
   page: PageData
   offers: Offer[]
   faqs: Faq[]
   testimonials: Testimonial[]
   blogPosts: BlogPost[]
+  nearbyCities: NearbyCity[]
 }
 
-export default function ServiceCityContent({ page, offers, faqs, testimonials, blogPosts }: Props) {
+export default function ServiceCityContent({ page, offers, faqs, testimonials, blogPosts, nearbyCities }: Props) {
   const { services: service, cities: city } = page
 
   return (
@@ -190,9 +196,13 @@ export default function ServiceCityContent({ page, offers, faqs, testimonials, b
       />
 
       {/* 12. Zones */}
-      {page.zones_text && (
-        <ServiceCityZones zonesText={page.zones_text} cityName={city.name} />
-      )}
+      <ServiceCityZones
+        cityName={city.name}
+        citySlug={city.slug}
+        serviceSlug={service.slug}
+        nearbyCities={nearbyCities}
+        zonesText={page.zones_text}
+      />
 
       {/* 13. Avant/Après (sauf climatisation) */}
       {service.slug !== 'climatisation' && <BeforeAfter />}

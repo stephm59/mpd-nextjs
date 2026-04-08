@@ -100,7 +100,7 @@ export default async function ServiceCityPage({
   if (!page) notFound()
 
   const supabase = createServerClient()
-  const [{ data: offers }, { data: faqs }, { data: genericFaqs }, { data: testimonials }, { data: blogPosts }] =
+  const [{ data: offers }, { data: faqs }, { data: genericFaqs }, { data: testimonials }, { data: blogPosts }, { data: allCities }] =
     await Promise.all([
       supabase
         .from('service_city_offers')
@@ -132,6 +132,11 @@ export default async function ServiceCityPage({
         .eq('published', true)
         .eq('service_id', page.services.id)
         .limit(3),
+      supabase
+        .from('cities')
+        .select('name, slug')
+        .eq('published', true)
+        .order('name'),
     ])
 
   const allFaqs = [...(faqs ?? []), ...(genericFaqs ?? [])]
@@ -165,6 +170,7 @@ export default async function ServiceCityPage({
           faqs={allFaqs}
           testimonials={testimonials ?? []}
           blogPosts={blogPosts ?? []}
+          nearbyCities={allCities ?? []}
         />
       </main>
       <Footer />

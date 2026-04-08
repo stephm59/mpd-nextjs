@@ -1,11 +1,22 @@
+import Link from 'next/link'
 import { MapPin } from 'lucide-react'
 
-interface Props {
-  zonesText: string
-  cityName: string
+interface City {
+  name: string
+  slug: string
 }
 
-export default function ServiceCityZones({ zonesText, cityName }: Props) {
+interface Props {
+  cityName: string
+  citySlug: string
+  serviceSlug: string
+  nearbyCities: City[]
+  zonesText?: string | null
+}
+
+export default function ServiceCityZones({ cityName, citySlug, serviceSlug, nearbyCities, zonesText }: Props) {
+  const otherCities = nearbyCities.filter(c => c.slug !== citySlug)
+
   return (
     <section className="py-16 bg-muted/30">
       <div className="container mx-auto px-6">
@@ -22,9 +33,31 @@ export default function ServiceCityZones({ zonesText, cityName }: Props) {
         </div>
 
         <div className="max-w-4xl mx-auto">
-          <div className="bg-card p-8 rounded-lg border border-border mb-8">
-            <p className="text-foreground leading-relaxed text-lg">{zonesText}</p>
-          </div>
+          {zonesText && (
+            <div className="bg-card p-8 rounded-lg border border-border mb-8">
+              <p className="text-foreground leading-relaxed text-lg">{zonesText}</p>
+            </div>
+          )}
+
+          {otherCities.length > 0 && (
+            <div className="bg-card rounded-xl border border-border p-8 mb-8">
+              <h3 className="text-lg font-semibold text-foreground mb-5">
+                Villes desservies
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {otherCities.map(city => (
+                  <Link
+                    key={city.slug}
+                    href={`/${serviceSlug}-${city.slug}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted hover:bg-primary hover:text-white text-sm font-medium text-foreground transition-colors"
+                  >
+                    <MapPin className="h-3 w-3 opacity-60" />
+                    {city.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="bg-white rounded-2xl shadow-elevated overflow-hidden">
             <iframe
