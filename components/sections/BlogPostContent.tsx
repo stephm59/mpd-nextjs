@@ -4,7 +4,6 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 import { resolveBlogImage } from '@/lib/blog-image'
-import { HERO_VIDEO_URL, HERO_POSTER } from '@/config/media'
 
 interface Faq {
   id: string
@@ -45,37 +44,25 @@ interface Props {
 export default function BlogPostContent({ post, faqs, relatedPosts }: Props) {
   return (
     <>
-      {/* Hero article — video background */}
-      <div className="relative pt-24 pb-16 overflow-hidden min-h-[320px] flex items-end">
-        <video
-          src={HERO_VIDEO_URL}
-          poster={HERO_POSTER}
-          className="absolute inset-0 w-full h-full object-cover"
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="metadata"
-          aria-hidden="true"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/70" />
-        <div className="relative z-10 container mx-auto px-4 max-w-4xl">
+      {/* Hero article */}
+      <div className="bg-gray-900 pt-24 pb-14">
+        <div className="container mx-auto px-4 max-w-4xl">
           {post.services && (
             <Link
               href={`/${post.services.slug}-lille`}
-              className="inline-block text-sm font-semibold text-white/80 uppercase tracking-widest mb-4 hover:text-white transition-colors"
+              className="inline-block text-xs font-bold text-primary bg-primary/10 uppercase tracking-widest px-3 py-1 rounded-full mb-6 hover:bg-primary/20 transition-colors"
             >
               {post.services.name}
             </Link>
           )}
-          <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight">
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-5 leading-tight">
             {post.title}
           </h1>
           {post.excerpt && (
-            <p className="text-lg md:text-xl text-white/85 leading-relaxed max-w-3xl">{post.excerpt}</p>
+            <p className="text-lg text-white/75 leading-relaxed max-w-3xl">{post.excerpt}</p>
           )}
           {post.published_at && (
-            <time className="block mt-4 text-sm text-white/60">
+            <time className="block mt-5 text-sm text-white/45">
               Publié le {new Date(post.published_at).toLocaleDateString('fr-FR', {
                 year: 'numeric', month: 'long', day: 'numeric',
               })}
