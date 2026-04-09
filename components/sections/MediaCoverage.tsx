@@ -46,6 +46,7 @@ export default function MediaCoverage() {
                   <video
                     ref={videoRef}
                     src={MEDIA_VIDEO_URL}
+                    poster="https://pub-ee5d8554679a4a23a82caac56686992a.r2.dev/cover-tv.webp"
                     className="w-full h-auto rounded-xl object-cover"
                     preload="none"
                     onEnded={() => setIsPlaying(false)}

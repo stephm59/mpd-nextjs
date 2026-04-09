@@ -46,7 +46,7 @@ export default function HomeHero({ title, subtitle }: Props = {}) {
             />
           ) : (
             <img
-              src={HERO_POSTER}
+              src="https://pub-ee5d8554679a4a23a82caac56686992a.r2.dev/david.webp"
               alt=""
               className="w-full h-full object-cover"
               aria-hidden="true"

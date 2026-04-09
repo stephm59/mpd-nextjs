@@ -19,8 +19,8 @@ export default function About() {
     <section className="pt-32 pb-20 bg-background">
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row gap-8 items-center lg:items-start max-w-6xl mx-auto">
-          {/* Circular video */}
-          <div className="flex-shrink-0 flex justify-center lg:justify-start">
+          {/* Circular video — desktop only */}
+          <div className="hidden md:flex flex-shrink-0 justify-center lg:justify-start">
             <div className="relative">
               <video
                 ref={videoRef}
