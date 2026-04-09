@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -37,6 +37,14 @@ export default function ContactForm({
   description = 'Remplissez ce formulaire et nous vous recontacterons rapidement pour établir votre devis personnalisé et sans engagement.',
   inline = false,
 }: ContactFormProps) {
+  const EMAILJS_SERVICE_ID = 'service_5uollxl'
+  const EMAILJS_TEMPLATE_ID = 'template_5n8krc1'
+  const EMAILJS_PUBLIC_KEY = 'JWcps7Vj8BkvDAzsc'
+
+  useEffect(() => {
+    emailjs.init(EMAILJS_PUBLIC_KEY)
+  }, [])
+
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
   const formRef = useRef<HTMLFormElement>(null)
 
@@ -51,15 +59,14 @@ export default function ContactForm({
     setStatus('sending')
     try {
       await emailjs.send(
-        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
-        process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
         {
           from_name: `${data.firstName} ${data.lastName}`,
           from_email: data.email,
           phone: data.phone,
           message: data.message,
-        },
-        process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!
+        }
       )
       setStatus('success')
       reset()
