@@ -112,7 +112,7 @@ export default function CarnetClient({ initialPosts }: Props) {
               type="search"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              placeholder="Rechercher un article…"
+              placeholder="Rechercher un article..."
               className="w-full pl-12 pr-10 py-3 rounded-xl bg-white/95 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary shadow-elevated text-base"
             />
             {searchTerm && (
