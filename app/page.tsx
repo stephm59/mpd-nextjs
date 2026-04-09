@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     title: "Mon p'tit Dépanneur : Chauffagiste, Serrurier, Plombier (Lille)",
     description: "Services de réparation d'urgence 24/7 - Chauffage, Plomberie, Serrurerie",
     url: 'https://www.monptitdepanneur.fr',
-    images: [{ url: 'https://pub-ee5d8554679a4a23a82caac56686992a.r2.dev/mpd-photo-equipe.webp' }],
+    images: [{ url: 'https://pub-ee5d8554679a4a23a82caac56686992a.r2.dev/equipe-mon-ptit-depanneur.webp' }],
   },
 }
 
