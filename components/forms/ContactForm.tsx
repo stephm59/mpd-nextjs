@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import emailjs from '@emailjs/browser'
-import { X, Send, CheckCircle, AlertCircle } from 'lucide-react'
+import { X, Send, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -70,9 +70,37 @@ export default function ContactForm({
       )
       setStatus('success')
       reset()
+      setTimeout(() => {
+        setStatus('idle')
+        onClose?.()
+      }, 3000)
     } catch {
       setStatus('error')
     }
+  }
+
+  if (status === 'success') {
+    const successContent = (
+      <div className="text-center py-8">
+        <div className="text-green-500 text-5xl mb-4">✓</div>
+        <h3 className="text-xl font-bold mb-2">Message envoyé !</h3>
+        <p className="text-muted-foreground">On vous rappelle dans l&apos;heure.</p>
+        <p className="font-semibold mt-2">☎ 03 28 53 48 68</p>
+      </div>
+    )
+    if (inline) return successContent
+    if (!isOpen) return null
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+        <div className="relative bg-background rounded-xl shadow-elevated w-full max-w-lg p-6 animate-fade-in-up">
+          <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded-lg hover:bg-muted transition-colors" aria-label="Fermer">
+            <X className="w-5 h-5 text-muted-foreground" />
+          </button>
+          {successContent}
+        </div>
+      </div>
+    )
   }
 
   const formContent = (
@@ -111,12 +139,6 @@ export default function ContactForm({
         {errors.message && <p className="text-destructive text-xs">{errors.message.message}</p>}
       </div>
 
-      {status === 'success' && (
-        <div className="flex items-center gap-2 bg-success/10 border border-success/30 text-success px-4 py-3 rounded-lg text-sm">
-          <CheckCircle className="w-4 h-4 flex-shrink-0" />
-          Message envoyé ! Nous vous recontactons très rapidement.
-        </div>
-      )}
       {status === 'error' && (
         <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg text-sm">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
