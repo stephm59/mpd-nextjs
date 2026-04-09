@@ -45,18 +45,13 @@ export default function BlogPostContent({ post, faqs, relatedPosts }: Props) {
   return (
     <>
       {/* Hero article — image de couverture en fond */}
-      <section className="relative min-h-[50vh] flex items-end pb-12 pt-24">
-        {resolveBlogImage(post.cover_image_url) ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={resolveBlogImage(post.cover_image_url)!}
-            alt={post.title}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gray-900" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/20" />
+      <section
+        className="relative min-h-[50vh] flex items-end pb-12 pt-24 bg-cover bg-center bg-gray-900"
+        style={resolveBlogImage(post.cover_image_url)
+          ? { backgroundImage: `url(${resolveBlogImage(post.cover_image_url)})` }
+          : undefined}
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
         <div className="relative z-10 container mx-auto px-4 max-w-4xl">
           {post.services && (
             <Link
