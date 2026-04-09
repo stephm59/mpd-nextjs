@@ -45,7 +45,7 @@ export default function BlogPostContent({ post, faqs, relatedPosts }: Props) {
   return (
     <>
       {/* Hero article */}
-      <div className="bg-gray-900 pt-24 pb-14">
+      <div className="bg-primary pt-24 pb-14">
         <div className="container mx-auto px-4 max-w-4xl">
           {post.services && (
             <Link
