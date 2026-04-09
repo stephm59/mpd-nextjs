@@ -12,6 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/entreprise`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/avis`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE_URL}/carnet`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${BASE_URL}/urgence`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
     { url: `${BASE_URL}/mentions-legales`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
   ]
 
@@ -21,12 +22,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .select('services(slug), cities(slug), updated_at')
     .eq('published', true)
 
-  const serviceCityPages: MetadataRoute.Sitemap = (servicePages ?? []).map((page: any) => ({
-    url: `${BASE_URL}/${page.services.slug}-${page.cities.slug}`,
-    lastModified: new Date(page.updated_at),
-    changeFrequency: 'monthly' as const,
-    priority: 0.9,
-  }))
+  const serviceCityPages: MetadataRoute.Sitemap = (servicePages ?? []).map((page: any) => {
+    const isLille = page.cities.slug === 'lille'
+    return {
+      url: `${BASE_URL}/${page.services.slug}-${page.cities.slug}`,
+      lastModified: new Date(page.updated_at),
+      changeFrequency: 'monthly' as const,
+      priority: isLille ? 1.0 : 0.8,
+    }
+  })
 
   // Blog posts
   const { data: posts } = await supabase
