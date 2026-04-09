@@ -44,48 +44,43 @@ interface Props {
 export default function BlogPostContent({ post, faqs, relatedPosts }: Props) {
   return (
     <>
-      {/* Hero article */}
-      <div className="bg-primary pt-24 pb-14">
-        <div className="container mx-auto px-4 max-w-4xl">
+      {/* Hero article — image de couverture en fond */}
+      <section className="relative min-h-[50vh] flex items-end pb-12 pt-24">
+        {resolveBlogImage(post.cover_image_url) ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={resolveBlogImage(post.cover_image_url)!}
+            alt={post.title}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gray-900" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/20" />
+        <div className="relative z-10 container mx-auto px-4 max-w-4xl">
           {post.services && (
             <Link
               href={`/${post.services.slug}-lille`}
-              className="inline-block text-xs font-bold text-primary bg-primary/10 uppercase tracking-widest px-3 py-1 rounded-full mb-6 hover:bg-primary/20 transition-colors"
+              className="inline-block text-xs font-bold text-white/90 bg-white/15 uppercase tracking-widest px-3 py-1 rounded-full mb-6 hover:bg-white/25 transition-colors"
             >
               {post.services.name}
             </Link>
           )}
-          <h1 className="text-3xl md:text-5xl font-bold text-white mb-5 leading-tight">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
             {post.title}
           </h1>
           {post.excerpt && (
-            <p className="text-lg text-white/75 leading-relaxed max-w-3xl">{post.excerpt}</p>
+            <p className="text-lg text-white/80 leading-relaxed max-w-3xl">{post.excerpt}</p>
           )}
           {post.published_at && (
-            <time className="block mt-5 text-sm text-white/45">
+            <time className="block mt-4 text-sm text-white/60">
               Publié le {new Date(post.published_at).toLocaleDateString('fr-FR', {
                 year: 'numeric', month: 'long', day: 'numeric',
               })}
             </time>
           )}
         </div>
-      </div>
-
-      {/* Image de couverture */}
-      {resolveBlogImage(post.cover_image_url) && (
-        <div className="container mx-auto px-4 max-w-4xl mb-8">
-          <div className="relative h-64 md:h-96 rounded-xl overflow-hidden">
-            <Image
-              src={resolveBlogImage(post.cover_image_url)!}
-              alt={post.title}
-              fill
-              unoptimized
-              className="object-cover"
-              priority
-            />
-          </div>
-        </div>
-      )}
+      </section>
 
       {/* Contenu */}
       <article className="container mx-auto px-4 max-w-4xl pb-12">
