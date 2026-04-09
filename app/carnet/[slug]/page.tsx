@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Script from 'next/script'
 import { createServerClient } from '@/lib/supabase/server'
+import { getRelatedBlogPosts } from '@/lib/supabase'
 import { generateBlogPostJsonLd } from '@/lib/jsonld'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
@@ -68,18 +69,15 @@ export default async function BlogPostPage({
 
   if (!post) notFound()
 
-  const [{ data: faqs }, { data: relatedPosts }] = await Promise.all([
+  const [{ data: faqs }, relatedPosts] = await Promise.all([
     supabase
       .from('blog_post_faqs')
       .select('*')
       .eq('blog_post_id', post.id)
       .order('position'),
-    supabase
-      .from('blog_posts')
-      .select('id, title, slug, excerpt, cover_image_url, published_at')
-      .eq('published', true)
-      .neq('slug', slug)
-      .limit(3),
+    post.service_id
+      ? getRelatedBlogPosts(post.service_id, slug, 3)
+      : Promise.resolve([]),
   ])
 
   const jsonLd = generateBlogPostJsonLd(post)
@@ -93,7 +91,7 @@ export default async function BlogPostPage({
       />
       <Header />
       <main>
-        <BlogPostContent post={post as any} faqs={faqs ?? []} relatedPosts={relatedPosts ?? []} />
+        <BlogPostContent post={post as any} faqs={faqs ?? []} relatedPosts={relatedPosts} />
       </main>
       <Footer />
     </>

@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 import { resolveBlogImage } from '@/lib/blog-image'
+import CtaBlock from './CtaBlock'
 
 interface Faq {
   id: string
@@ -42,14 +43,14 @@ interface Props {
 }
 
 export default function BlogPostContent({ post, faqs, relatedPosts }: Props) {
+  const coverUrl = resolveBlogImage(post.cover_image_url)
+
   return (
     <>
-      {/* Hero article — image de couverture en fond */}
+      {/* Hero article — cover_image en fond avec overlay */}
       <section
-        className="relative min-h-[50vh] flex items-end pb-12 pt-24 bg-cover bg-center bg-gray-900"
-        style={resolveBlogImage(post.cover_image_url)
-          ? { backgroundImage: `url(${resolveBlogImage(post.cover_image_url)})` }
-          : undefined}
+        className="relative min-h-[60vh] flex items-end pb-14 pt-24 bg-cover bg-center bg-gray-900"
+        style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : undefined}
       >
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
         <div className="relative z-10 container mx-auto px-4 max-w-4xl">
@@ -77,8 +78,8 @@ export default function BlogPostContent({ post, faqs, relatedPosts }: Props) {
         </div>
       </section>
 
-      {/* Contenu */}
-      <article className="container mx-auto px-4 max-w-4xl pb-12">
+      {/* Contenu article */}
+      <article className="container mx-auto px-4 max-w-4xl py-12">
         {post.content && (
           <div className="prose prose-lg max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-h2:text-2xl prose-h2:mt-10 prose-h3:text-xl prose-h3:mt-8 prose-p:text-gray-700 prose-p:leading-relaxed prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-img:rounded-xl prose-img:mx-auto prose-li:text-gray-700 prose-strong:text-gray-900 prose-blockquote:border-primary prose-blockquote:text-gray-600 prose-ul:my-4 prose-ol:my-4 prose-table:text-sm">
             <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
@@ -86,75 +87,67 @@ export default function BlogPostContent({ post, faqs, relatedPosts }: Props) {
             </ReactMarkdown>
           </div>
         )}
+      </article>
 
-        {/* FAQs */}
-        {faqs.length > 0 && (
-          <div className="mt-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Questions fréquentes</h2>
+      {/* FAQs */}
+      {faqs.length > 0 && (
+        <section className="bg-gray-50 py-12">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <h2 className="text-2xl font-bold text-gray-900 mb-8">Questions fréquentes</h2>
             <div className="space-y-4">
               {faqs.map(faq => (
-                <div key={faq.id} className="bg-gray-50 rounded-xl p-6">
+                <div key={faq.id} className="bg-white rounded-xl p-6 shadow-card">
                   <h3 className="font-bold text-gray-900 mb-3">{faq.question}</h3>
                   <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
                 </div>
               ))}
             </div>
           </div>
-        )}
+        </section>
+      )}
 
-        {/* CTA */}
-        <div className="mt-12 bg-primary text-white rounded-2xl p-8 text-center">
-          <h2 className="text-2xl font-bold mb-3">Besoin d&apos;un professionnel ?</h2>
-          <p className="opacity-90 mb-6">Intervention rapide à Lille et sa métropole</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="tel:0328534868"
-              className="bg-yellow-400 text-blue-900 font-bold px-6 py-3 rounded-xl hover:bg-yellow-300 transition-colors"
-            >
-              📞 03 28 53 48 68
-            </a>
-            <Link
-              href="/contact"
-              className="bg-white text-primary font-bold px-6 py-3 rounded-xl hover:bg-gray-100 transition-colors"
-            >
-              Devis gratuit
-            </Link>
-          </div>
-        </div>
-      </article>
+      {/* CTA */}
+      <CtaBlock
+        title="Besoin d'un artisan à Lille ?"
+        subtitle="Intervention rapide, devis gratuit et sans engagement"
+      />
 
       {/* Articles liés */}
       {relatedPosts.length > 0 && (
-        <section className="bg-gray-50 py-12">
+        <section className="bg-gray-50 py-14">
           <div className="container mx-auto px-4">
-            <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Articles similaires</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
+              D&apos;autres conseils qui peuvent vous intéresser
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
               {relatedPosts.map(related => {
                 const relatedImg = resolveBlogImage(related.cover_image_url)
                 return (
-                <article key={related.id} className="bg-white rounded-xl overflow-hidden shadow-card hover:shadow-soft transition-shadow">
-                  {relatedImg && (
-                    <div className="relative h-40">
-                      <Image
-                        src={relatedImg}
-                        alt={related.title}
-                        fill
-                        unoptimized
-                        className="object-cover"
-                      />
-                    </div>
-                  )}
-                  <div className="p-4">
-                    <h3 className="font-bold text-gray-900 line-clamp-2 mb-2">
-                      <Link href={`/carnet/${related.slug}`} className="hover:text-primary transition-colors">
-                        {related.title}
-                      </Link>
-                    </h3>
-                    {related.excerpt && (
-                      <p className="text-sm text-gray-600 line-clamp-2">{related.excerpt}</p>
+                  <article key={related.id} className="bg-white rounded-xl overflow-hidden shadow-card hover:shadow-elevated transition-shadow">
+                    {relatedImg ? (
+                      <div className="relative h-44">
+                        <Image
+                          src={relatedImg}
+                          alt={related.title}
+                          fill
+                          unoptimized
+                          className="object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-44 bg-gray-100 flex items-center justify-center text-4xl">💡</div>
                     )}
-                  </div>
-                </article>
+                    <div className="p-5">
+                      <h3 className="font-bold text-gray-900 line-clamp-2 mb-2">
+                        <Link href={`/carnet/${related.slug}`} className="hover:text-primary transition-colors">
+                          {related.title}
+                        </Link>
+                      </h3>
+                      {related.excerpt && (
+                        <p className="text-sm text-gray-600 line-clamp-2">{related.excerpt}</p>
+                      )}
+                    </div>
+                  </article>
                 )
               })}
             </div>
