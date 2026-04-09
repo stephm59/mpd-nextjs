@@ -97,7 +97,7 @@ export default function CarnetClient({ initialPosts }: Props) {
           loop
           muted
           playsInline
-          preload="metadata"
+          preload="none"
           aria-hidden="true"
         />
         <div className="absolute inset-0 bg-black/55" />

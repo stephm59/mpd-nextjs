@@ -32,7 +32,7 @@ export default function About() {
                 loop
                 muted
                 playsInline
-                preload="metadata"
+                preload="none"
               />
               <Button
                 variant="outline"

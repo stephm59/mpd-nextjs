@@ -63,7 +63,7 @@ export default function ServiceCityIntro({ page }: Props) {
                 loop
                 muted
                 playsInline
-                preload="metadata"
+                preload="none"
               />
               <Button
                 variant="outline"

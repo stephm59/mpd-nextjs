@@ -47,7 +47,7 @@ export default function MediaCoverage() {
                     ref={videoRef}
                     src={MEDIA_VIDEO_URL}
                     className="w-full h-auto rounded-xl object-cover"
-                    preload="metadata"
+                    preload="none"
                     onEnded={() => setIsPlaying(false)}
                   />
                   <div className="absolute inset-0 flex items-center justify-center">

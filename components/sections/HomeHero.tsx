@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Star, Clock, Shield, Wrench, Phone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -21,23 +21,37 @@ interface Props {
 
 export default function HomeHero({ title, subtitle }: Props = {}) {
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(false)
+
+  useEffect(() => {
+    setIsDesktop(window.innerWidth > 768)
+  }, [])
 
   return (
     <>
       <section className="relative min-h-[50vh] flex items-center overflow-visible pt-20 pb-20">
-        {/* Background video */}
+        {/* Background video — desktop only */}
         <div className="absolute inset-0">
-          <video
-            src={HERO_VIDEO_URL}
-            poster={HERO_POSTER}
-            className="w-full h-full object-cover"
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="metadata"
-            aria-hidden="true"
-          />
+          {isDesktop ? (
+            <video
+              src={HERO_VIDEO_URL}
+              poster={HERO_POSTER}
+              className="w-full h-full object-cover"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="none"
+              aria-hidden="true"
+            />
+          ) : (
+            <img
+              src={HERO_POSTER}
+              alt=""
+              className="w-full h-full object-cover"
+              aria-hidden="true"
+            />
+          )}
         </div>
         {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/20" />

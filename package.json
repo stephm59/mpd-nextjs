@@ -41,5 +41,6 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.14",
     "typescript": "^5"
-  }
+  },
+  "browserslist": "> 0.5%, last 2 versions, not dead, not ie 11"
 }
