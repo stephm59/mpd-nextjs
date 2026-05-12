@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getServices } from "./actions";
+import { getServices, getVilles } from "./actions";
 import { TunnelReservation } from "@/components/rdv/TunnelReservation";
 
 export const metadata: Metadata = {
@@ -13,7 +13,10 @@ export const metadata: Metadata = {
 };
 
 export default async function RdvPage() {
-  const services = await getServices();
+  const [services, villes] = await Promise.all([
+    getServices(),
+    getVilles(),
+  ]);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-12 lg:py-20">
@@ -27,7 +30,7 @@ export default async function RdvPage() {
           </p>
         </div>
 
-        <TunnelReservation services={services} />
+        <TunnelReservation services={services} villes={villes} />
 
         <div className="mt-8 rounded-lg border border-urgent/30 bg-urgent/5 p-4 text-sm text-foreground">
           <p>

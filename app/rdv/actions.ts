@@ -97,3 +97,45 @@ export async function getMarques(): Promise<Marque[]> {
   }
   return data ?? [];
 }
+
+/**
+ * Récupère le prix pour un service (par UUID) dans une ville (par code postal).
+ * Utilise 2 requêtes simples plutôt qu'une jointure pour plus de fiabilité.
+ * Retourne null si aucun tarif trouvé pour cette combinaison.
+ */
+export async function getTarifByCodePostal(
+  serviceId: string,
+  codePostal: string
+): Promise<{ prix_centimes: number; ville_id: string; ville_nom: string } | null> {
+  const supabase = createServerClient();
+
+  const { data: ville, error: villeError } = await supabase
+    .from("rdv_villes")
+    .select("id, nom")
+    .eq("code_postal", codePostal)
+    .eq("est_active", true)
+    .maybeSingle();
+
+  if (villeError || !ville) {
+    console.error("[getTarifByCodePostal] Ville non trouvée pour CP:", codePostal, villeError);
+    return null;
+  }
+
+  const { data: tarif, error: tarifError } = await supabase
+    .from("rdv_tarifs_ville")
+    .select("prix_centimes")
+    .eq("service_id", serviceId)
+    .eq("ville_id", ville.id)
+    .maybeSingle();
+
+  if (tarifError || !tarif) {
+    console.error("[getTarifByCodePostal] Tarif non trouvé pour service:", serviceId, "ville:", ville.id, tarifError);
+    return null;
+  }
+
+  return {
+    prix_centimes: tarif.prix_centimes,
+    ville_id: ville.id,
+    ville_nom: ville.nom,
+  };
+}
