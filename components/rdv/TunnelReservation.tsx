@@ -6,16 +6,18 @@ import type { Database } from "@/lib/supabase/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronRight, ArrowLeft, MapPin, Phone } from "lucide-react";
+import { ChevronRight, ArrowLeft, MapPin, Phone, Flame, Sparkles } from "lucide-react";
 import { formatDuration, formatPrice } from "@/lib/rdv/format";
 import { getTarifByCodePostal } from "@/app/rdv/actions";
 
 type Service = Database["public"]["Tables"]["rdv_services"]["Row"];
 type Ville = Database["public"]["Tables"]["rdv_villes"]["Row"];
+type Marque = Database["public"]["Tables"]["rdv_marques_chaudiere"]["Row"];
 
 interface TunnelReservationProps {
   services: Service[];
   villes: Ville[];
+  marques: Marque[];
 }
 
 type EtapeNum = 1 | 2 | 3 | 4 | 5;
@@ -25,28 +27,48 @@ interface EtatTunnel {
   service: Service | null;
   ville: Ville | null;
   prixCentimes: number | null;
+  marque: Marque | null;
 }
 
-export function TunnelReservation({ services, villes }: TunnelReservationProps) {
+const SERVICES_AVEC_MARQUE = ["entretien-chaudiere", "devis-remplacement-chaudiere"];
+
+export function TunnelReservation({
+  services,
+  villes,
+  marques,
+}: TunnelReservationProps) {
   const [etat, setEtat] = useState<EtatTunnel>({
     etape: 1,
     service: null,
     ville: null,
     prixCentimes: null,
+    marque: null,
   });
 
-  const totalEtapes = etat.service?.est_devis ? 4 : 5;
+  const serviceAvecMarque = etat.service && SERVICES_AVEC_MARQUE.includes(etat.service.slug);
+  const totalEtapes = etat.service?.est_devis
+    ? (serviceAvecMarque ? 5 : 4)
+    : 5;
 
   function selectService(service: Service) {
-    setEtat({ ...etat, service, etape: 2 });
+    setEtat({ ...etat, service, etape: 2, marque: null });
   }
 
   function retourEtape(etape: EtapeNum) {
     setEtat({ ...etat, etape });
   }
 
-  async function selectVille(ville: Ville, prixCentimes: number) {
-    setEtat({ ...etat, ville, prixCentimes, etape: 3 });
+  function selectVille(ville: Ville, prixCentimes: number) {
+    const prochaineEtape: EtapeNum = serviceAvecMarque ? 3 : 4;
+    setEtat({ ...etat, ville, prixCentimes, etape: prochaineEtape });
+  }
+
+  function selectMarque(marque: Marque) {
+    setEtat({ ...etat, marque, etape: 4 });
+  }
+
+  function retourDepuisEtape4() {
+    setEtat({ ...etat, etape: serviceAvecMarque ? 3 : 2 });
   }
 
   return (
@@ -67,12 +89,22 @@ export function TunnelReservation({ services, villes }: TunnelReservationProps) 
           />
         )}
 
-        {etat.etape >= 3 && (
+        {etat.etape === 3 && etat.service && etat.ville && (
+          <Etape3ChoixMarque
+            service={etat.service}
+            ville={etat.ville}
+            marques={marques}
+            onBack={() => retourEtape(2)}
+            onSelect={selectMarque}
+          />
+        )}
+
+        {etat.etape >= 4 && (
           <div className="mt-6">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => retourEtape((etat.etape - 1) as EtapeNum)}
+              onClick={retourDepuisEtape4}
               className="mb-4"
             >
               <ArrowLeft className="mr-1 h-4 w-4" />
@@ -86,6 +118,16 @@ export function TunnelReservation({ services, villes }: TunnelReservationProps) 
               <p className="mt-1 text-sm">
                 Ville : <strong>{etat.ville?.nom}</strong> ({etat.ville?.code_postal})
               </p>
+              {etat.marque && (
+                <p className="mt-1 text-sm">
+                  Marque chaudière : <strong>{etat.marque.nom}</strong>
+                  {etat.marque.exclusif && (
+                    <span className="ml-2 inline-block rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                      Spécialiste exclusif
+                    </span>
+                  )}
+                </p>
+              )}
               {etat.prixCentimes !== null && (
                 <p className="mt-1 text-sm">
                   Tarif : <strong>{formatPrice(etat.prixCentimes)}</strong>
@@ -305,6 +347,68 @@ function Etape2ChoixVille({
           Récupération du tarif...
         </p>
       )}
+    </div>
+  );
+}
+
+function Etape3ChoixMarque({
+  service,
+  ville,
+  marques,
+  onBack,
+  onSelect,
+}: {
+  service: Service;
+  ville: Ville;
+  marques: Marque[];
+  onBack: () => void;
+  onSelect: (m: Marque) => void;
+}) {
+  return (
+    <div>
+      <Button variant="ghost" size="sm" onClick={onBack} className="mb-4">
+        <ArrowLeft className="mr-1 h-4 w-4" />
+        Retour
+      </Button>
+
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        Étape 3
+      </p>
+      <h2 className="mt-1 text-xl font-semibold text-foreground">
+        Quelle est la marque de votre chaudière ?
+      </h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {service.nom} · {ville.nom} ({ville.code_postal})
+      </p>
+
+      <div className="mt-6 space-y-2">
+        {marques.map((marque) => (
+          <button
+            key={marque.id}
+            onClick={() => onSelect(marque)}
+            className="group flex w-full items-center justify-between rounded-lg border border-border bg-background p-3.5 text-left transition-all hover:border-primary hover:bg-primary/5 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          >
+            <div className="flex items-center gap-3">
+              {marque.exclusif ? (
+                <Sparkles className="h-4 w-4 text-primary" />
+              ) : (
+                <Flame className="h-4 w-4 text-muted-foreground" />
+              )}
+              <span className="font-medium text-foreground">{marque.nom}</span>
+              {marque.exclusif && (
+                <span className="inline-block rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                  Spécialiste dédié
+                </span>
+              )}
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+          </button>
+        ))}
+      </div>
+
+      <p className="mt-4 text-xs text-muted-foreground">
+        Vous ne connaissez pas la marque ? Choisissez «&nbsp;Autre / je ne sais pas&nbsp;», notre technicien identifiera sur place.
+      </p>
     </div>
   );
 }
