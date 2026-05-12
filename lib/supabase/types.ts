@@ -7,6 +7,8 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.4"
   }
@@ -40,7 +42,15 @@ export type Database = {
           question?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "blog_post_faqs_blog_post_id_fkey"
+            columns: ["blog_post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       blog_posts: {
         Row: {
@@ -88,7 +98,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "blog_posts_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cities: {
         Row: {
@@ -119,6 +137,366 @@ export type Database = {
           published?: boolean
           region?: string | null
           slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rdv_competences: {
+        Row: {
+          created_at: string
+          id: string
+          service_id: string
+          technicien_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          service_id: string
+          technicien_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          service_id?: string
+          technicien_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdv_competences_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "rdv_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdv_competences_technicien_id_fkey"
+            columns: ["technicien_id"]
+            isOneToOne: false
+            referencedRelation: "rdv_techniciens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdv_marques_chaudiere: {
+        Row: {
+          created_at: string
+          est_active: boolean
+          exclusif: boolean
+          id: string
+          nom: string
+          ordre: number
+          technicien_specialiste_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          est_active?: boolean
+          exclusif?: boolean
+          id?: string
+          nom: string
+          ordre?: number
+          technicien_specialiste_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          est_active?: boolean
+          exclusif?: boolean
+          id?: string
+          nom?: string
+          ordre?: number
+          technicien_specialiste_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdv_marques_chaudiere_technicien_specialiste_id_fkey"
+            columns: ["technicien_specialiste_id"]
+            isOneToOne: false
+            referencedRelation: "rdv_techniciens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdv_notifications: {
+        Row: {
+          created_at: string
+          destinataire: string
+          envoye_a: string | null
+          erreur_message: string | null
+          id: string
+          resend_id: string | null
+          reservation_id: string
+          statut: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          destinataire: string
+          envoye_a?: string | null
+          erreur_message?: string | null
+          id?: string
+          resend_id?: string | null
+          reservation_id: string
+          statut?: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          destinataire?: string
+          envoye_a?: string | null
+          erreur_message?: string | null
+          id?: string
+          resend_id?: string | null
+          reservation_id?: string
+          statut?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdv_notifications_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "rdv_reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdv_reservations: {
+        Row: {
+          client_adresse: string
+          client_complement: string | null
+          client_email: string
+          client_nom: string
+          client_telephone: string
+          created_at: string
+          creneau_debut: string
+          creneau_fin: string
+          google_event_id: string | null
+          id: string
+          ip_address: unknown
+          marque_id: string | null
+          prix_centimes: number
+          service_id: string
+          statut: string
+          technicien_id: string
+          updated_at: string
+          user_agent: string | null
+          ville_id: string
+        }
+        Insert: {
+          client_adresse: string
+          client_complement?: string | null
+          client_email: string
+          client_nom: string
+          client_telephone: string
+          created_at?: string
+          creneau_debut: string
+          creneau_fin: string
+          google_event_id?: string | null
+          id?: string
+          ip_address?: unknown
+          marque_id?: string | null
+          prix_centimes?: number
+          service_id: string
+          statut?: string
+          technicien_id: string
+          updated_at?: string
+          user_agent?: string | null
+          ville_id: string
+        }
+        Update: {
+          client_adresse?: string
+          client_complement?: string | null
+          client_email?: string
+          client_nom?: string
+          client_telephone?: string
+          created_at?: string
+          creneau_debut?: string
+          creneau_fin?: string
+          google_event_id?: string | null
+          id?: string
+          ip_address?: unknown
+          marque_id?: string | null
+          prix_centimes?: number
+          service_id?: string
+          statut?: string
+          technicien_id?: string
+          updated_at?: string
+          user_agent?: string | null
+          ville_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdv_reservations_marque_id_fkey"
+            columns: ["marque_id"]
+            isOneToOne: false
+            referencedRelation: "rdv_marques_chaudiere"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdv_reservations_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "rdv_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdv_reservations_technicien_id_fkey"
+            columns: ["technicien_id"]
+            isOneToOne: false
+            referencedRelation: "rdv_techniciens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdv_reservations_ville_id_fkey"
+            columns: ["ville_id"]
+            isOneToOne: false
+            referencedRelation: "rdv_villes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdv_services: {
+        Row: {
+          created_at: string
+          description: string | null
+          duree_minutes: number
+          est_actif: boolean
+          est_devis: boolean
+          id: string
+          nom: string
+          ordre: number
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duree_minutes: number
+          est_actif?: boolean
+          est_devis?: boolean
+          id?: string
+          nom: string
+          ordre?: number
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duree_minutes?: number
+          est_actif?: boolean
+          est_devis?: boolean
+          id?: string
+          nom?: string
+          ordre?: number
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rdv_tarifs_ville: {
+        Row: {
+          created_at: string
+          id: string
+          prix_centimes: number
+          service_id: string
+          updated_at: string
+          ville_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          prix_centimes?: number
+          service_id: string
+          updated_at?: string
+          ville_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          prix_centimes?: number
+          service_id?: string
+          updated_at?: string
+          ville_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdv_tarifs_ville_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "rdv_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdv_tarifs_ville_ville_id_fkey"
+            columns: ["ville_id"]
+            isOneToOne: false
+            referencedRelation: "rdv_villes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdv_techniciens: {
+        Row: {
+          created_at: string
+          email_workspace: string
+          est_actif: boolean
+          google_calendar_id: string | null
+          google_refresh_token: string | null
+          id: string
+          ordre: number
+          prenom: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email_workspace: string
+          est_actif?: boolean
+          google_calendar_id?: string | null
+          google_refresh_token?: string | null
+          id?: string
+          ordre?: number
+          prenom: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email_workspace?: string
+          est_actif?: boolean
+          google_calendar_id?: string | null
+          google_refresh_token?: string | null
+          id?: string
+          ordre?: number
+          prenom?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rdv_villes: {
+        Row: {
+          code_postal: string
+          created_at: string
+          est_active: boolean
+          id: string
+          nom: string
+          updated_at: string
+        }
+        Insert: {
+          code_postal: string
+          created_at?: string
+          est_active?: boolean
+          id?: string
+          nom: string
+          updated_at?: string
+        }
+        Update: {
+          code_postal?: string
+          created_at?: string
+          est_active?: boolean
+          id?: string
+          nom?: string
           updated_at?: string
         }
         Relationships: []
@@ -184,7 +562,22 @@ export type Database = {
           service_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "service_city_faqs_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_city_faqs_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_city_offers: {
         Row: {
@@ -220,7 +613,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "service_city_offers_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "service_city_pages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_city_pages: {
         Row: {
@@ -274,7 +675,22 @@ export type Database = {
           updated_at?: string
           zones_text?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "service_city_pages_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_city_pages_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_faqs_generic: {
         Row: {
@@ -307,7 +723,15 @@ export type Database = {
           service_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "service_faqs_generic_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       services: {
         Row: {
@@ -336,6 +760,138 @@ export type Database = {
           published?: boolean
           slug?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      staging_service_city_faqs: {
+        Row: {
+          answer: string
+          city_slug: string
+          position: number
+          published: boolean | null
+          question: string
+          service_slug: string
+        }
+        Insert: {
+          answer: string
+          city_slug: string
+          position: number
+          published?: boolean | null
+          question: string
+          service_slug: string
+        }
+        Update: {
+          answer?: string
+          city_slug?: string
+          position?: number
+          published?: boolean | null
+          question?: string
+          service_slug?: string
+        }
+        Relationships: []
+      }
+      staging_service_city_offers: {
+        Row: {
+          city_slug: string
+          description: string | null
+          emoji: string | null
+          icon_name: string | null
+          position: number
+          service_slug: string
+          title: string
+        }
+        Insert: {
+          city_slug: string
+          description?: string | null
+          emoji?: string | null
+          icon_name?: string | null
+          position: number
+          service_slug: string
+          title: string
+        }
+        Update: {
+          city_slug?: string
+          description?: string | null
+          emoji?: string | null
+          icon_name?: string | null
+          position?: number
+          service_slug?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      staging_service_city_pages: {
+        Row: {
+          city_slug: string
+          cta_subtitle: string | null
+          cta_title: string | null
+          h1: string | null
+          h2_intro: string | null
+          intro_description: string | null
+          meta_description: string | null
+          meta_title: string | null
+          published: boolean | null
+          published_at: string | null
+          service_slug: string
+          zones_text: string | null
+        }
+        Insert: {
+          city_slug: string
+          cta_subtitle?: string | null
+          cta_title?: string | null
+          h1?: string | null
+          h2_intro?: string | null
+          intro_description?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published?: boolean | null
+          published_at?: string | null
+          service_slug: string
+          zones_text?: string | null
+        }
+        Update: {
+          city_slug?: string
+          cta_subtitle?: string | null
+          cta_title?: string | null
+          h1?: string | null
+          h2_intro?: string | null
+          intro_description?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published?: boolean | null
+          published_at?: string | null
+          service_slug?: string
+          zones_text?: string | null
+        }
+        Relationships: []
+      }
+      staging_testimonials: {
+        Row: {
+          author_name: string
+          city_slug: string | null
+          content: string
+          location: string | null
+          published: boolean | null
+          rating: number | null
+          service_slug: string | null
+        }
+        Insert: {
+          author_name: string
+          city_slug?: string | null
+          content: string
+          location?: string | null
+          published?: boolean | null
+          rating?: number | null
+          service_slug?: string | null
+        }
+        Update: {
+          author_name?: string
+          city_slug?: string | null
+          content?: string
+          location?: string | null
+          published?: boolean | null
+          rating?: number | null
+          service_slug?: string | null
         }
         Relationships: []
       }
@@ -376,7 +932,22 @@ export type Database = {
           service_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "testimonials_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "testimonials_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -395,13 +966,124 @@ export type Database = {
 }
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
 type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
-export type Tables<T extends keyof DefaultSchema["Tables"]> =
-  DefaultSchema["Tables"][T] extends { Row: infer R } ? R : never
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
-export type TablesInsert<T extends keyof DefaultSchema["Tables"]> =
-  DefaultSchema["Tables"][T] extends { Insert: infer I } ? I : never
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
 
-export type TablesUpdate<T extends keyof DefaultSchema["Tables"]> =
-  DefaultSchema["Tables"][T] extends { Update: infer U } ? U : never
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
