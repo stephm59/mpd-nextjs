@@ -10,6 +10,7 @@ import {
   genererCreneauxJour,
 } from "@/lib/rdv/dates";
 import { reservationSchema, type ReservationInput } from "@/lib/rdv/schema";
+import { envoyerEmailConfirmationClient } from "@/lib/brevo/emails";
 
 type Service = Database["public"]["Tables"]["rdv_services"]["Row"];
 type Ville = Database["public"]["Tables"]["rdv_villes"]["Row"];
@@ -323,6 +324,20 @@ export async function creerReservation(
 
   const supabase = createAdminClient();
 
+  const [serviceRes, villeRes, technicienRes, marqueRes] = await Promise.all([
+    supabase.from("rdv_services").select("nom").eq("id", data.service_id).maybeSingle(),
+    supabase.from("rdv_villes").select("nom, code_postal").eq("id", data.ville_id).maybeSingle(),
+    supabase.from("rdv_techniciens").select("prenom").eq("id", data.technicien_id).maybeSingle(),
+    data.marque_id
+      ? supabase.from("rdv_marques_chaudiere").select("nom").eq("id", data.marque_id).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+  const serviceNom = serviceRes.data?.nom ?? null;
+  const villeNom = villeRes.data?.nom ?? null;
+  const villeCP = villeRes.data?.code_postal ?? null;
+  const technicienPrenom = technicienRes.data?.prenom ?? null;
+  const marqueNom = marqueRes.data?.nom ?? null;
+
   const { data: reservation, error: insertError } = await supabase
     .from("rdv_reservations")
     .insert({
@@ -352,6 +367,36 @@ export async function creerReservation(
       success: false,
       error: "Impossible de créer la réservation. Veuillez réessayer.",
     };
+  }
+
+  const emailResult = await envoyerEmailConfirmationClient(
+    {
+      email: data.client_email,
+      prenom: data.client_prenom,
+      nom: data.client_nom,
+    },
+    {
+      reference: reference,
+      client_prenom: data.client_prenom,
+      service_nom: serviceNom ?? "Intervention",
+      marque_nom: marqueNom,
+      date_debut: data.date_debut,
+      date_fin: data.date_fin,
+      technicien_prenom: technicienPrenom ?? "Notre technicien",
+      ville_nom: villeNom ?? "",
+      ville_cp: villeCP ?? "",
+      client_adresse: data.client_adresse,
+      client_complement: data.client_complement ?? null,
+      prix_centimes: data.prix_centimes,
+    }
+  );
+
+  if (!emailResult.success) {
+    console.warn(
+      "[creerReservation] Email échoué mais réservation OK:",
+      reference,
+      emailResult.error
+    );
   }
 
   return {
