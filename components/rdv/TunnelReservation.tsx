@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { Database } from "@/lib/supabase/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,7 @@ interface TunnelReservationProps {
   marques: Marque[];
 }
 
-type EtapeNum = 1 | 2 | 3 | 4 | 5 | 6;
+type EtapeNum = 1 | 2 | 3 | 4 | 5;
 
 interface EtatTunnel {
   etape: EtapeNum;
@@ -44,7 +45,6 @@ interface EtatTunnel {
   date: Date | null;
   creneau: CreneauDisponible | null;
   technicienIdPrefere: string | null;
-  reservation: { id: string; reference: string } | null;
 }
 
 const SERVICES_AVEC_MARQUE = ["entretien-chaudiere", "devis-remplacement-chaudiere"];
@@ -63,7 +63,6 @@ export function TunnelReservation({
     date: null,
     creneau: null,
     technicienIdPrefere: null,
-    reservation: null,
   });
 
   const serviceAvecMarque = etat.service && SERVICES_AVEC_MARQUE.includes(etat.service.slug);
@@ -96,7 +95,7 @@ export function TunnelReservation({
   return (
     <Card className="shadow-card">
       <CardContent className="p-6 lg:p-8">
-        <ProgressBar etape={Math.min(etat.etape, totalEtapes) as EtapeNum} total={totalEtapes} />
+        <ProgressBar etape={etat.etape} total={totalEtapes} />
 
         {etat.etape === 1 && (
           <Etape1ChoixService services={services} onSelect={selectService} />
@@ -143,25 +142,7 @@ export function TunnelReservation({
             creneau={etat.creneau}
             prixCentimes={etat.prixCentimes}
             onBack={() => setEtat({ ...etat, etape: serviceAvecMarque ? 4 : 3 })}
-            onSuccess={(reservation) => setEtat({ ...etat, reservation, etape: 6 })}
           />
-        )}
-
-        {etat.etape === 6 && etat.reservation && (
-          <div className="mt-6 rounded-md border border-success/30 bg-success/5 p-6 text-center">
-            <p className="text-lg font-semibold text-foreground">
-              🎉 Réservation confirmée !
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Référence : <strong>{etat.reservation.reference}</strong>
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              ID interne : {etat.reservation.id}
-            </p>
-            <p className="mt-4 text-sm text-foreground">
-              Une vraie page de confirmation viendra à l&apos;étape 3.6.C.
-            </p>
-          </div>
         )}
       </CardContent>
     </Card>
@@ -713,7 +694,6 @@ function Etape5Coordonnees({
   creneau,
   prixCentimes,
   onBack,
-  onSuccess,
 }: {
   service: Service;
   ville: Ville;
@@ -722,8 +702,8 @@ function Etape5Coordonnees({
   creneau: CreneauDisponible;
   prixCentimes: number;
   onBack: () => void;
-  onSuccess: (reservation: { id: string; reference: string }) => void;
 }) {
+  const router = useRouter();
   const [prenom, setPrenom] = React.useState("");
   const [nom, setNom] = React.useState("");
   const [email, setEmail] = React.useState("");
@@ -772,7 +752,8 @@ function Etape5Coordonnees({
       const result = await creerReservation(input);
 
       if (result.success) {
-        onSuccess({ id: result.reservation_id, reference: result.reference });
+        router.push(`/rdv/confirmation/${result.reference}`);
+        return;
       } else {
         if (result.fieldErrors) {
           setFieldErrors(result.fieldErrors);
