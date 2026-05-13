@@ -262,6 +262,27 @@ export type Database = {
           },
         ]
       }
+      rdv_parametres: {
+        Row: {
+          cle: string
+          description: string | null
+          updated_at: string
+          valeur: string
+        }
+        Insert: {
+          cle: string
+          description?: string | null
+          updated_at?: string
+          valeur: string
+        }
+        Update: {
+          cle?: string
+          description?: string | null
+          updated_at?: string
+          valeur?: string
+        }
+        Relationships: []
+      }
       rdv_reservations: {
         Row: {
           client_adresse: string
