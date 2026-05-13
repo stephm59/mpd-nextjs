@@ -289,6 +289,7 @@ export type Database = {
           client_complement: string | null
           client_email: string
           client_nom: string
+          client_prenom: string | null
           client_telephone: string
           created_at: string
           creneau_debut: string
@@ -297,7 +298,9 @@ export type Database = {
           id: string
           ip_address: unknown
           marque_id: string | null
+          notes: string | null
           prix_centimes: number
+          reference: string | null
           service_id: string
           statut: string
           technicien_id: string
@@ -310,6 +313,7 @@ export type Database = {
           client_complement?: string | null
           client_email: string
           client_nom: string
+          client_prenom?: string | null
           client_telephone: string
           created_at?: string
           creneau_debut: string
@@ -318,7 +322,9 @@ export type Database = {
           id?: string
           ip_address?: unknown
           marque_id?: string | null
+          notes?: string | null
           prix_centimes?: number
+          reference?: string | null
           service_id: string
           statut?: string
           technicien_id: string
@@ -331,6 +337,7 @@ export type Database = {
           client_complement?: string | null
           client_email?: string
           client_nom?: string
+          client_prenom?: string | null
           client_telephone?: string
           created_at?: string
           creneau_debut?: string
@@ -339,7 +346,9 @@ export type Database = {
           id?: string
           ip_address?: unknown
           marque_id?: string | null
+          notes?: string | null
           prix_centimes?: number
+          reference?: string | null
           service_id?: string
           statut?: string
           technicien_id?: string

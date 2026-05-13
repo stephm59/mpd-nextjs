@@ -1,6 +1,7 @@
 "use server";
 
 import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/supabase/types";
 import {
   getDatePremierJourReservable,
@@ -8,6 +9,7 @@ import {
   getJourSemaine,
   genererCreneauxJour,
 } from "@/lib/rdv/dates";
+import { reservationSchema, type ReservationInput } from "@/lib/rdv/schema";
 
 type Service = Database["public"]["Tables"]["rdv_services"]["Row"];
 type Ville = Database["public"]["Tables"]["rdv_villes"]["Row"];
@@ -283,4 +285,78 @@ export async function getCreneauxDisponibles(params: {
   }
 
   return creneaux;
+}
+
+export type CreerReservationResult =
+  | { success: true; reservation_id: string; reference: string }
+  | { success: false; error: string; fieldErrors?: Record<string, string[]> };
+
+/**
+ * Server Action : crée une réservation dans Supabase.
+ * - Valide les données avec Zod
+ * - Insère dans rdv_reservations (mapping date_debut→creneau_debut, date_fin→creneau_fin)
+ * - Retourne le résultat (succès avec ID + référence, ou erreurs de validation)
+ *
+ * NOTE : à l'étape 3.7, on ajoutera ici la création de l'event Google Calendar.
+ * NOTE : à l'étape 3.8, on ajoutera l'envoi d'email de confirmation via Resend.
+ */
+export async function creerReservation(
+  input: ReservationInput
+): Promise<CreerReservationResult> {
+  const result = reservationSchema.safeParse(input);
+  if (!result.success) {
+    const fieldErrors: Record<string, string[]> = {};
+    for (const issue of result.error.issues) {
+      const path = issue.path.join(".");
+      if (!fieldErrors[path]) fieldErrors[path] = [];
+      fieldErrors[path].push(issue.message);
+    }
+    return {
+      success: false,
+      error: "Validation échouée",
+      fieldErrors,
+    };
+  }
+  const data = result.data;
+
+  const reference = `RDV-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+  const supabase = createAdminClient();
+
+  const { data: reservation, error: insertError } = await supabase
+    .from("rdv_reservations")
+    .insert({
+      service_id: data.service_id,
+      ville_id: data.ville_id,
+      marque_id: data.marque_id,
+      technicien_id: data.technicien_id,
+      creneau_debut: data.date_debut,
+      creneau_fin: data.date_fin,
+      prix_centimes: data.prix_centimes,
+      client_prenom: data.client_prenom,
+      client_nom: data.client_nom,
+      client_email: data.client_email,
+      client_telephone: data.client_telephone,
+      client_adresse: data.client_adresse,
+      client_complement: data.client_complement,
+      notes: data.notes,
+      reference: reference,
+      statut: "confirme",
+    })
+    .select("id, reference")
+    .single();
+
+  if (insertError || !reservation) {
+    console.error("[creerReservation] Erreur insertion:", insertError);
+    return {
+      success: false,
+      error: "Impossible de créer la réservation. Veuillez réessayer.",
+    };
+  }
+
+  return {
+    success: true,
+    reservation_id: reservation.id,
+    reference: reference,
+  };
 }

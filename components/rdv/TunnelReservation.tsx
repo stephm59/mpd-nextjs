@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronRight, ArrowLeft, MapPin, Phone, Flame, Sparkles } from "lucide-react";
 import { formatDuration, formatPrice } from "@/lib/rdv/format";
 import { formatJourLong } from "@/lib/rdv/dates";
@@ -17,7 +19,9 @@ import {
   getParametres,
   getCreneauxDisponibles,
   getTechniciensPourService,
+  creerReservation,
 } from "@/app/rdv/actions";
+import type { ReservationInput } from "@/lib/rdv/schema";
 
 type Service = Database["public"]["Tables"]["rdv_services"]["Row"];
 type Ville = Database["public"]["Tables"]["rdv_villes"]["Row"];
@@ -40,6 +44,7 @@ interface EtatTunnel {
   date: Date | null;
   creneau: CreneauDisponible | null;
   technicienIdPrefere: string | null;
+  reservation: { id: string; reference: string } | null;
 }
 
 const SERVICES_AVEC_MARQUE = ["entretien-chaudiere", "devis-remplacement-chaudiere"];
@@ -58,12 +63,11 @@ export function TunnelReservation({
     date: null,
     creneau: null,
     technicienIdPrefere: null,
+    reservation: null,
   });
 
   const serviceAvecMarque = etat.service && SERVICES_AVEC_MARQUE.includes(etat.service.slug);
-  const totalEtapes = etat.service?.est_devis
-    ? (serviceAvecMarque ? 6 : 5)
-    : 6;
+  const totalEtapes = serviceAvecMarque ? 5 : 4;
 
   function selectService(service: Service) {
     setEtat({ ...etat, service, etape: 2, marque: null });
@@ -74,30 +78,25 @@ export function TunnelReservation({
   }
 
   function selectVille(ville: Ville, prixCentimes: number) {
-    const prochaineEtape: EtapeNum = serviceAvecMarque ? 3 : 4;
-    setEtat({ ...etat, ville, prixCentimes, etape: prochaineEtape });
+    setEtat({ ...etat, ville, prixCentimes, etape: 3 });
   }
 
   function selectMarque(marque: Marque) {
     setEtat({ ...etat, marque, etape: 4 });
   }
 
-  function selectDate(date: Date) {
-    setEtat({ ...etat, date, etape: 5 });
+  function selectDateEtCreneau(date: Date, creneau: CreneauDisponible) {
+    setEtat({ ...etat, date, creneau, etape: 5 });
   }
 
-  function selectCreneau(creneau: CreneauDisponible) {
-    setEtat({ ...etat, creneau, etape: 6 });
-  }
-
-  function retourDepuisEtape4() {
+  function retourDepuisDateCreneau() {
     setEtat({ ...etat, etape: serviceAvecMarque ? 3 : 2 });
   }
 
   return (
     <Card className="shadow-card">
       <CardContent className="p-6 lg:p-8">
-        <ProgressBar etape={etat.etape} total={totalEtapes} />
+        <ProgressBar etape={Math.min(etat.etape, totalEtapes) as EtapeNum} total={totalEtapes} />
 
         {etat.etape === 1 && (
           <Etape1ChoixService services={services} onSelect={selectService} />
@@ -112,7 +111,7 @@ export function TunnelReservation({
           />
         )}
 
-        {etat.etape === 3 && etat.service && etat.ville && (
+        {etat.etape === 3 && serviceAvecMarque && etat.service && etat.ville && (
           <Etape3ChoixMarque
             service={etat.service}
             ville={etat.ville}
@@ -122,69 +121,46 @@ export function TunnelReservation({
           />
         )}
 
-        {etat.etape === 4 && etat.service && etat.ville && (
-          <Etape4ChoixDate
+        {((etat.etape === 3 && !serviceAvecMarque) || etat.etape === 4) &&
+          etat.service && etat.ville && (
+          <Etape4ChoixDateCreneau
             service={etat.service}
             ville={etat.ville}
             marque={etat.marque}
-            onBack={retourDepuisEtape4}
-            onSelect={selectDate}
+            technicienIdPrefere={etat.technicienIdPrefere}
+            onChangePreferenceTech={(id) => setEtat({ ...etat, technicienIdPrefere: id })}
+            onBack={retourDepuisDateCreneau}
+            onSelect={selectDateEtCreneau}
           />
         )}
 
-        {etat.etape === 5 && etat.service && etat.ville && etat.date && (
-          <Etape5ChoixCreneau
+        {etat.etape === 5 && etat.service && etat.ville && etat.date && etat.creneau && etat.prixCentimes !== null && (
+          <Etape5Coordonnees
             service={etat.service}
             ville={etat.ville}
             marque={etat.marque}
             date={etat.date}
-            technicienIdPrefere={etat.technicienIdPrefere}
-            onChangePreferenceTech={(id) => setEtat({ ...etat, technicienIdPrefere: id })}
-            onBack={() => retourEtape(4)}
-            onSelect={selectCreneau}
+            creneau={etat.creneau}
+            prixCentimes={etat.prixCentimes}
+            onBack={() => setEtat({ ...etat, etape: serviceAvecMarque ? 4 : 3 })}
+            onSuccess={(reservation) => setEtat({ ...etat, reservation, etape: 6 })}
           />
         )}
 
-        {etat.etape === 6 && (
-          <div className="mt-6">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => retourEtape(5)}
-              className="mb-4"
-            >
-              <ArrowLeft className="mr-1 h-4 w-4" />
-              Retour
-            </Button>
-            <div className="rounded-md border border-dashed border-muted-foreground/30 p-8 text-center text-muted-foreground">
-              <p className="font-medium">Étape 6 en construction</p>
-              <p className="mt-2 text-sm">
-                Service : <strong>{etat.service?.nom}</strong>
-              </p>
-              <p className="mt-1 text-sm">
-                Ville : <strong>{etat.ville?.nom}</strong> ({etat.ville?.code_postal})
-              </p>
-              {etat.marque && (
-                <p className="mt-1 text-sm">
-                  Marque : <strong>{etat.marque.nom}</strong>
-                </p>
-              )}
-              {etat.date && (
-                <p className="mt-1 text-sm">
-                  Date : <strong>{formatJourLong(etat.date)} {etat.date.getFullYear()}</strong>
-                </p>
-              )}
-              {etat.creneau && (
-                <p className="mt-1 text-sm">
-                  Créneau : <strong>{new Date(etat.creneau.debut).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})} - {new Date(etat.creneau.fin).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</strong> avec <strong>{etat.creneau.technicien_prenom}</strong>
-                </p>
-              )}
-              {etat.prixCentimes !== null && (
-                <p className="mt-1 text-sm">
-                  Tarif : <strong>{formatPrice(etat.prixCentimes)}</strong>
-                </p>
-              )}
-            </div>
+        {etat.etape === 6 && etat.reservation && (
+          <div className="mt-6 rounded-md border border-success/30 bg-success/5 p-6 text-center">
+            <p className="text-lg font-semibold text-foreground">
+              🎉 Réservation confirmée !
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Référence : <strong>{etat.reservation.reference}</strong>
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              ID interne : {etat.reservation.id}
+            </p>
+            <p className="mt-4 text-sm text-foreground">
+              Une vraie page de confirmation viendra à l&apos;étape 3.6.C.
+            </p>
           </div>
         )}
       </CardContent>
@@ -464,24 +440,32 @@ function Etape3ChoixMarque({
   );
 }
 
-function Etape4ChoixDate({
+function Etape4ChoixDateCreneau({
   service,
   ville,
   marque,
+  technicienIdPrefere,
+  onChangePreferenceTech,
   onBack,
   onSelect,
 }: {
   service: Service;
   ville: Ville;
   marque: Marque | null;
+  technicienIdPrefere: string | null;
+  onChangePreferenceTech: (id: string | null) => void;
   onBack: () => void;
-  onSelect: (d: Date) => void;
+  onSelect: (date: Date, creneau: CreneauDisponible) => void;
 }) {
   const [parametres, setParametres] = React.useState<{
     delaiMinimumJours: number;
     joursVisiblesFutur: number;
     joursOuvres: string[];
   } | null>(null);
+  const [creneauxParJour, setCreneauxParJour] = React.useState<Map<string, CreneauDisponible[]> | null>(null);
+  const [techniciens, setTechniciens] = React.useState<Array<{ id: string; prenom: string }>>([]);
+  const [showTechSelector, setShowTechSelector] = React.useState(false);
+  const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
 
   React.useEffect(() => {
     getParametres().then((params) => {
@@ -489,16 +473,53 @@ function Etape4ChoixDate({
         delaiMinimumJours: parseInt(params["delai_minimum_jours"] ?? "1", 10),
         joursVisiblesFutur: parseInt(params["jours_visibles_futur"] ?? "30", 10),
         joursOuvres: (params["jours_ouvres"] ?? "lundi,mardi,mercredi,jeudi,vendredi")
-          .split(",")
-          .map((s) => s.trim().toLowerCase()),
+          .split(",").map(s => s.trim().toLowerCase()),
       });
     });
   }, []);
 
-  if (!parametres) {
+  React.useEffect(() => {
+    getTechniciensPourService(service.id).then((data) => {
+      setTechniciens(data.map(t => ({ id: t.id, prenom: t.prenom })));
+    });
+  }, [service.id]);
+
+  React.useEffect(() => {
+    setCreneauxParJour(null);
+    setSelectedDate(null);
+    getCreneauxDisponibles({
+      serviceId: service.id,
+      marqueId: marque?.id ?? null,
+      technicienIdPrefere: technicienIdPrefere,
+    }).then((tousLesCreneaux) => {
+      const seen = new Set<string>();
+      const dedupes: CreneauDisponible[] = [];
+      for (const c of tousLesCreneaux) {
+        const key = `${c.debut}-${c.fin}`;
+        if (!seen.has(key)) { seen.add(key); dedupes.push(c); }
+      }
+      const parJour = new Map<string, CreneauDisponible[]>();
+      for (const c of dedupes) {
+        const date = new Date(c.debut);
+        const cle = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+        const liste = parJour.get(cle) ?? [];
+        liste.push(c);
+        parJour.set(cle, liste);
+      }
+      parJour.forEach((liste) => liste.sort((a, b) => a.debut.localeCompare(b.debut)));
+      setCreneauxParJour(parJour);
+      const joursAvecDispos = Array.from(parJour.keys()).sort();
+      if (joursAvecDispos.length > 0) {
+        const [year, month, day] = joursAvecDispos[0].split("-").map(Number);
+        setSelectedDate(new Date(year, month - 1, day));
+      }
+    });
+  }, [service.id, marque?.id, technicienIdPrefere]);
+
+  if (!parametres || creneauxParJour === null) {
     return (
       <div className="py-12 text-center text-muted-foreground">
-        Chargement du calendrier...
+        Chargement des disponibilités...
       </div>
     );
   }
@@ -510,141 +531,45 @@ function Etape4ChoixDate({
   const dateMax = new Date(dateMin);
   dateMax.setDate(dateMax.getDate() + parametres.joursVisiblesFutur);
 
-  const NOM_JOUR_JS = [
-    "dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi",
-  ];
+  const NOM_JOUR_JS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+
+  function dateToKey(date: Date): string {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  }
+  function jourADesCreneaux(date: Date): boolean {
+    return (creneauxParJour?.get(dateToKey(date))?.length ?? 0) > 0;
+  }
 
   const disabledDays = (date: Date) => {
     if (date < dateMin) return true;
     if (date > dateMax) return true;
     const nomJour = NOM_JOUR_JS[date.getDay()];
     if (!parametres.joursOuvres.includes(nomJour)) return true;
+    if (!jourADesCreneaux(date)) return true;
     return false;
   };
 
+  const creneauxJourSelectionne = selectedDate
+    ? (creneauxParJour.get(dateToKey(selectedDate)) ?? [])
+    : [];
+  const creneauxMatin = creneauxJourSelectionne.filter(c => new Date(c.debut).getHours() < 12);
+  const creneauxAprem = creneauxJourSelectionne.filter(c => new Date(c.debut).getHours() >= 12);
+  const techPrefereData = technicienIdPrefere ? techniciens.find(t => t.id === technicienIdPrefere) : null;
+
   return (
     <div>
       <Button variant="ghost" size="sm" onClick={onBack} className="mb-4">
         <ArrowLeft className="mr-1 h-4 w-4" />
         Retour
       </Button>
-
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        Étape 4
+        Date et créneau
       </p>
       <h2 className="mt-1 text-xl font-semibold text-foreground">
-        Choisissez une date
+        Choisissez votre rendez-vous
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
         {service.nom} · {ville.nom} ({ville.code_postal})
-        {marque && ` · ${marque.nom}`}
-      </p>
-
-      <div className="mt-6 flex justify-center">
-        <Calendar
-          mode="single"
-          onSelect={(date) => date && onSelect(date)}
-          disabled={disabledDays}
-          fromDate={dateMin}
-          toDate={dateMax}
-          className="rounded-md border border-border"
-        />
-      </div>
-
-      <p className="mt-4 text-xs text-muted-foreground">
-        Disponible du {formatJourLong(dateMin)} au {formatJourLong(dateMax)}. Les jours fériés et samedis/dimanches sont indisponibles.
-      </p>
-    </div>
-  );
-}
-
-function Etape5ChoixCreneau({
-  service,
-  ville,
-  marque,
-  date,
-  technicienIdPrefere,
-  onChangePreferenceTech,
-  onBack,
-  onSelect,
-}: {
-  service: Service;
-  ville: Ville;
-  marque: Marque | null;
-  date: Date;
-  technicienIdPrefere: string | null;
-  onChangePreferenceTech: (id: string | null) => void;
-  onBack: () => void;
-  onSelect: (c: CreneauDisponible) => void;
-}) {
-  const [creneaux, setCreneaux] = React.useState<CreneauDisponible[] | null>(null);
-  const [techniciens, setTechniciens] = React.useState<Array<{ id: string; prenom: string }>>([]);
-  const [showTechSelector, setShowTechSelector] = React.useState(false);
-
-  React.useEffect(() => {
-    getTechniciensPourService(service.id).then((data) => {
-      setTechniciens(data.map((t) => ({ id: t.id, prenom: t.prenom })));
-    });
-  }, [service.id]);
-
-  React.useEffect(() => {
-    setCreneaux(null);
-    getCreneauxDisponibles({
-      serviceId: service.id,
-      marqueId: marque?.id ?? null,
-      technicienIdPrefere: technicienIdPrefere,
-    }).then((data) => {
-      const jourCible = new Date(date);
-      jourCible.setHours(0, 0, 0, 0);
-      const jourSuivant = new Date(jourCible);
-      jourSuivant.setDate(jourSuivant.getDate() + 1);
-
-      const filtres = data.filter((c) => {
-        const debutDate = new Date(c.debut);
-        return debutDate >= jourCible && debutDate < jourSuivant;
-      });
-
-      const seen = new Set<string>();
-      const dedupes: CreneauDisponible[] = [];
-      for (const c of filtres) {
-        const key = `${c.debut}-${c.fin}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          dedupes.push(c);
-        }
-      }
-
-      dedupes.sort((a, b) => a.debut.localeCompare(b.debut));
-      setCreneaux(dedupes);
-    });
-  }, [service.id, marque?.id, technicienIdPrefere, date]);
-
-  const creneauxMatin = (creneaux ?? []).filter((c) => {
-    return new Date(c.debut).getHours() < 12;
-  });
-  const creneauxAprem = (creneaux ?? []).filter((c) => {
-    return new Date(c.debut).getHours() >= 12;
-  });
-
-  const techPrefereData = technicienIdPrefere
-    ? techniciens.find((t) => t.id === technicienIdPrefere)
-    : null;
-
-  return (
-    <div>
-      <Button variant="ghost" size="sm" onClick={onBack} className="mb-4">
-        <ArrowLeft className="mr-1 h-4 w-4" />
-        Retour
-      </Button>
-
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        Étape 5
-      </p>
-      <h2 className="mt-1 text-xl font-semibold text-foreground">
-        Choisissez un créneau
-      </h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {formatJourLong(date)} {date.getFullYear()} · {service.nom} · {ville.nom}
         {marque && ` · ${marque.nom}`}
       </p>
 
@@ -652,9 +577,7 @@ function Etape5ChoixCreneau({
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-medium text-foreground">
-              {techPrefereData
-                ? `Technicien : ${techPrefereData.prenom}`
-                : "Auto-attribution du technicien"}
+              {techPrefereData ? `Technicien : ${techPrefereData.prenom}` : "Auto-attribution du technicien"}
             </p>
             <p className="text-xs text-muted-foreground">
               {techPrefereData
@@ -662,22 +585,14 @@ function Etape5ChoixCreneau({
                 : "Nous vous attribuons le technicien le mieux placé"}
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowTechSelector(!showTechSelector)}
-          >
+          <Button variant="outline" size="sm" onClick={() => setShowTechSelector(!showTechSelector)}>
             {showTechSelector ? "Fermer" : techPrefereData ? "Changer" : "Choisir"}
           </Button>
         </div>
-
         {showTechSelector && (
           <div className="mt-3 space-y-1.5 border-t border-border pt-3">
             <button
-              onClick={() => {
-                onChangePreferenceTech(null);
-                setShowTechSelector(false);
-              }}
+              onClick={() => { onChangePreferenceTech(null); setShowTechSelector(false); }}
               className={`w-full rounded-md border p-2 text-left text-sm transition-colors ${
                 technicienIdPrefere === null
                   ? "border-primary bg-primary/5 text-foreground"
@@ -685,17 +600,12 @@ function Etape5ChoixCreneau({
               }`}
             >
               <span className="font-medium">Auto-attribution</span>
-              <span className="ml-2 text-xs text-muted-foreground">
-                (recommandé)
-              </span>
+              <span className="ml-2 text-xs text-muted-foreground">(recommandé)</span>
             </button>
-            {techniciens.map((t) => (
+            {techniciens.map(t => (
               <button
                 key={t.id}
-                onClick={() => {
-                  onChangePreferenceTech(t.id);
-                  setShowTechSelector(false);
-                }}
+                onClick={() => { onChangePreferenceTech(t.id); setShowTechSelector(false); }}
                 className={`w-full rounded-md border p-2 text-left text-sm transition-colors ${
                   technicienIdPrefere === t.id
                     ? "border-primary bg-primary/5 text-foreground"
@@ -709,51 +619,67 @@ function Etape5ChoixCreneau({
         )}
       </div>
 
-      {creneaux === null && (
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Chargement des créneaux...
-        </p>
-      )}
-
-      {creneaux !== null && creneaux.length === 0 && (
-        <div className="mt-6 rounded-md bg-muted/50 p-6 text-center">
-          <p className="text-sm font-medium text-foreground">
-            Aucun créneau disponible ce jour
-          </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Essayez une autre date ou changez de technicien.
-          </p>
+      <div className="mt-6 grid gap-6 lg:grid-cols-[auto,1fr]">
+        <div className="flex justify-center lg:justify-start">
+          <Calendar
+            mode="single"
+            selected={selectedDate ?? undefined}
+            onSelect={(date) => date && setSelectedDate(date)}
+            disabled={disabledDays}
+            fromDate={dateMin}
+            toDate={dateMax}
+            className="rounded-md border border-border"
+          />
         </div>
-      )}
-
-      {creneaux !== null && creneaux.length > 0 && (
-        <div className="mt-6 space-y-5">
-          {creneauxMatin.length > 0 && (
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Matin
-              </p>
-              <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
-                {creneauxMatin.map((c) => (
-                  <CreneauButton key={`${c.debut}-${c.technicien_id}`} creneau={c} onSelect={onSelect} />
-                ))}
-              </div>
+        <div className="min-h-0">
+          {!selectedDate && (
+            <div className="rounded-md bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+              Sélectionnez un jour dans le calendrier
             </div>
           )}
-          {creneauxAprem.length > 0 && (
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Après-midi
+          {selectedDate && creneauxJourSelectionne.length === 0 && (
+            <div className="rounded-md bg-muted/50 p-6 text-center">
+              <p className="text-sm font-medium text-foreground">
+                Aucun créneau ce jour
               </p>
-              <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
-                {creneauxAprem.map((c) => (
-                  <CreneauButton key={`${c.debut}-${c.technicien_id}`} creneau={c} onSelect={onSelect} />
-                ))}
-              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Choisissez un autre jour dans le calendrier.
+              </p>
+            </div>
+          )}
+          {selectedDate && creneauxJourSelectionne.length > 0 && (
+            <div>
+              <p className="mb-3 text-sm font-medium text-foreground">
+                {formatJourLong(selectedDate)} {selectedDate.getFullYear()}
+              </p>
+              {creneauxMatin.length > 0 && (
+                <div className="mb-4">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Matin
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
+                    {creneauxMatin.map(c => (
+                      <CreneauButton key={`${c.debut}-${c.technicien_id}`} creneau={c} onSelect={(c) => onSelect(selectedDate, c)} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {creneauxAprem.length > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Après-midi
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
+                    {creneauxAprem.map(c => (
+                      <CreneauButton key={`${c.debut}-${c.technicien_id}`} creneau={c} onSelect={(c) => onSelect(selectedDate, c)} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -776,5 +702,314 @@ function CreneauButton({
     >
       {heure}
     </button>
+  );
+}
+
+function Etape5Coordonnees({
+  service,
+  ville,
+  marque,
+  date,
+  creneau,
+  prixCentimes,
+  onBack,
+  onSuccess,
+}: {
+  service: Service;
+  ville: Ville;
+  marque: Marque | null;
+  date: Date;
+  creneau: CreneauDisponible;
+  prixCentimes: number;
+  onBack: () => void;
+  onSuccess: (reservation: { id: string; reference: string }) => void;
+}) {
+  const [prenom, setPrenom] = React.useState("");
+  const [nom, setNom] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [telephone, setTelephone] = React.useState("");
+  const [adresse, setAdresse] = React.useState("");
+  const [complement, setComplement] = React.useState("");
+  const [notes, setNotes] = React.useState("");
+  const [cgvAcceptees, setCgvAcceptees] = React.useState(false);
+
+  const [isSubmitting, startSubmit] = React.useTransition();
+  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string[]>>({});
+  const [globalError, setGlobalError] = React.useState<string | null>(null);
+
+  const isValid =
+    prenom.trim().length >= 2 &&
+    nom.trim().length >= 2 &&
+    email.trim().length > 0 &&
+    telephone.trim().length > 0 &&
+    adresse.trim().length >= 5 &&
+    cgvAcceptees;
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setFieldErrors({});
+    setGlobalError(null);
+
+    startSubmit(async () => {
+      const input: ReservationInput = {
+        service_id: service.id,
+        ville_id: ville.id,
+        marque_id: marque?.id ?? null,
+        technicien_id: creneau.technicien_id,
+        date_debut: creneau.debut,
+        date_fin: creneau.fin,
+        prix_centimes: prixCentimes,
+        client_prenom: prenom.trim(),
+        client_nom: nom.trim(),
+        client_email: email.trim(),
+        client_telephone: telephone.trim(),
+        client_adresse: adresse.trim(),
+        client_complement: complement.trim() || null,
+        notes: notes.trim() || null,
+        cgv_acceptees: cgvAcceptees,
+      };
+
+      const result = await creerReservation(input);
+
+      if (result.success) {
+        onSuccess({ id: result.reservation_id, reference: result.reference });
+      } else {
+        if (result.fieldErrors) {
+          setFieldErrors(result.fieldErrors);
+        }
+        setGlobalError(result.error);
+      }
+    });
+  }
+
+  const heureDebut = new Date(creneau.debut).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const heureFin = new Date(creneau.fin).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
+  return (
+    <div>
+      <Button variant="ghost" size="sm" onClick={onBack} className="mb-4" disabled={isSubmitting}>
+        <ArrowLeft className="mr-1 h-4 w-4" />
+        Retour
+      </Button>
+
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        Vos coordonnées
+      </p>
+      <h2 className="mt-1 text-xl font-semibold text-foreground">
+        Confirmation de la réservation
+      </h2>
+
+      <div className="mt-4 rounded-md border border-border bg-muted/30 p-4">
+        <p className="text-sm font-semibold text-foreground">Récapitulatif</p>
+        <dl className="mt-2 space-y-1 text-sm">
+          <div className="flex justify-between">
+            <dt className="text-muted-foreground">Service</dt>
+            <dd className="font-medium text-foreground">{service.nom}</dd>
+          </div>
+          {marque && (
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Marque</dt>
+              <dd className="font-medium text-foreground">{marque.nom}</dd>
+            </div>
+          )}
+          <div className="flex justify-between">
+            <dt className="text-muted-foreground">Adresse</dt>
+            <dd className="font-medium text-foreground">{ville.nom} ({ville.code_postal})</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt className="text-muted-foreground">Date</dt>
+            <dd className="font-medium text-foreground">{formatJourLong(date)} {date.getFullYear()}</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt className="text-muted-foreground">Créneau</dt>
+            <dd className="font-medium text-foreground">{heureDebut} - {heureFin}</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt className="text-muted-foreground">Technicien</dt>
+            <dd className="font-medium text-foreground">{creneau.technicien_prenom}</dd>
+          </div>
+          <div className="flex justify-between border-t border-border pt-2 mt-2">
+            <dt className="font-semibold text-foreground">Tarif</dt>
+            <dd className="font-bold text-foreground">{formatPrice(prixCentimes)}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="prenom" className="text-sm font-medium text-foreground">
+              Prénom <span className="text-destructive">*</span>
+            </label>
+            <Input
+              id="prenom"
+              type="text"
+              value={prenom}
+              onChange={(e) => setPrenom(e.target.value)}
+              placeholder="Jean"
+              required
+              maxLength={50}
+              className="mt-1.5"
+              disabled={isSubmitting}
+            />
+            {fieldErrors.client_prenom && (
+              <p className="mt-1 text-xs text-destructive">{fieldErrors.client_prenom[0]}</p>
+            )}
+          </div>
+          <div>
+            <label htmlFor="nom" className="text-sm font-medium text-foreground">
+              Nom <span className="text-destructive">*</span>
+            </label>
+            <Input
+              id="nom"
+              type="text"
+              value={nom}
+              onChange={(e) => setNom(e.target.value)}
+              placeholder="Dupont"
+              required
+              maxLength={50}
+              className="mt-1.5"
+              disabled={isSubmitting}
+            />
+            {fieldErrors.client_nom && (
+              <p className="mt-1 text-xs text-destructive">{fieldErrors.client_nom[0]}</p>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="email" className="text-sm font-medium text-foreground">
+            Email <span className="text-destructive">*</span>
+          </label>
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="jean.dupont@email.com"
+            required
+            maxLength={100}
+            className="mt-1.5"
+            disabled={isSubmitting}
+          />
+          {fieldErrors.client_email && (
+            <p className="mt-1 text-xs text-destructive">{fieldErrors.client_email[0]}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="telephone" className="text-sm font-medium text-foreground">
+            Téléphone <span className="text-destructive">*</span>
+          </label>
+          <Input
+            id="telephone"
+            type="tel"
+            value={telephone}
+            onChange={(e) => setTelephone(e.target.value)}
+            placeholder="06 12 34 56 78"
+            required
+            className="mt-1.5"
+            disabled={isSubmitting}
+          />
+          <p className="mt-1 text-xs text-muted-foreground">Format : 06 12 34 56 78</p>
+          {fieldErrors.client_telephone && (
+            <p className="mt-1 text-xs text-destructive">{fieldErrors.client_telephone[0]}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="adresse" className="text-sm font-medium text-foreground">
+            Adresse complète <span className="text-destructive">*</span>
+          </label>
+          <Input
+            id="adresse"
+            type="text"
+            value={adresse}
+            onChange={(e) => setAdresse(e.target.value)}
+            placeholder="12 rue de la République"
+            required
+            maxLength={200}
+            className="mt-1.5"
+            disabled={isSubmitting}
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            À {ville.nom} ({ville.code_postal})
+          </p>
+          {fieldErrors.client_adresse && (
+            <p className="mt-1 text-xs text-destructive">{fieldErrors.client_adresse[0]}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="complement" className="text-sm font-medium text-foreground">
+            Complément <span className="text-muted-foreground font-normal">(optionnel)</span>
+          </label>
+          <Input
+            id="complement"
+            type="text"
+            value={complement}
+            onChange={(e) => setComplement(e.target.value)}
+            placeholder="Bâtiment A, 3e étage, code 1234"
+            maxLength={100}
+            className="mt-1.5"
+            disabled={isSubmitting}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="notes" className="text-sm font-medium text-foreground">
+            Précisions <span className="text-muted-foreground font-normal">(optionnel)</span>
+          </label>
+          <Textarea
+            id="notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Difficultés d'accès, parking, étage, etc."
+            maxLength={500}
+            rows={3}
+            className="mt-1.5"
+            disabled={isSubmitting}
+          />
+        </div>
+
+        <div className="rounded-md border border-border bg-muted/20 p-3">
+          <label htmlFor="cgv" className="flex items-start gap-3 cursor-pointer">
+            <Checkbox
+              id="cgv"
+              checked={cgvAcceptees}
+              onCheckedChange={(checked) => setCgvAcceptees(checked === true)}
+              disabled={isSubmitting}
+              className="mt-0.5"
+            />
+            <span className="text-sm text-foreground">
+              J&apos;accepte les <Link href="/cgv" target="_blank" rel="noopener noreferrer" className="text-primary underline">conditions générales de vente</Link> et la <Link href="/confidentialite" target="_blank" rel="noopener noreferrer" className="text-primary underline">politique de confidentialité</Link>.
+              <span className="text-destructive ml-1">*</span>
+            </span>
+          </label>
+          {fieldErrors.cgv_acceptees && (
+            <p className="mt-1 text-xs text-destructive">{fieldErrors.cgv_acceptees[0]}</p>
+          )}
+        </div>
+
+        {globalError && (
+          <div className="rounded-md bg-destructive/10 p-3">
+            <p className="text-sm text-destructive">{globalError}</p>
+          </div>
+        )}
+
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full"
+          disabled={!isValid || isSubmitting}
+        >
+          {isSubmitting ? "Enregistrement..." : "Confirmer ma réservation"}
+        </Button>
+
+        <p className="text-center text-xs text-muted-foreground">
+          Vous recevrez un email de confirmation après validation.
+        </p>
+      </form>
+    </div>
   );
 }
