@@ -13,6 +13,10 @@ import {
   genererEmailNotificationEquipe,
   type NotificationEquipeData,
 } from "./templates/notification-equipe";
+import {
+  genererEmailRappelJ1,
+  type RappelJ1EmailData,
+} from "./templates/rappel-j1";
 
 const EQUIPE_EMAIL = process.env.EMAIL_EQUIPE ?? "contact@monptitdepanneur.fr";
 const EQUIPE_NAME = process.env.EMAIL_EQUIPE_NAME ?? "Mon p'tit Dépanneur";
@@ -183,6 +187,45 @@ export async function envoyerEmailNotificationEquipe(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[envoyerEmailNotificationEquipe] Erreur:", message);
+    return {
+      success: false,
+      error: message,
+    };
+  }
+}
+
+/**
+ * Envoie l'email de rappel J-1 au client (la veille du RDV).
+ */
+export async function envoyerEmailRappelJ1(
+  destinataire: { email: string; prenom: string; nom: string },
+  data: RappelJ1EmailData
+): Promise<EnvoyerEmailResult> {
+  try {
+    const { subject, html } = genererEmailRappelJ1(data);
+
+    const result = await brevoClient.transactionalEmails.sendTransacEmail({
+      sender: BREVO_SENDER,
+      to: [{
+        email: destinataire.email,
+        name: `${destinataire.prenom} ${destinataire.nom}`,
+      }],
+      subject,
+      htmlContent: html,
+    });
+
+    console.log(
+      "[envoyerEmailRappelJ1] Email envoyé:",
+      result.messageId ?? "(no messageId)"
+    );
+
+    return {
+      success: true,
+      messageId: result.messageId ?? undefined,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[envoyerEmailRappelJ1] Erreur:", message);
     return {
       success: false,
       error: message,

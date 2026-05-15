@@ -220,36 +220,36 @@ export type Database = {
       }
       rdv_notifications: {
         Row: {
+          brevo_message_id: string | null
+          canal: string
           created_at: string
-          destinataire: string
-          envoye_a: string | null
-          erreur_message: string | null
+          envoyee_at: string
+          erreur: string | null
           id: string
-          resend_id: string | null
           reservation_id: string
-          statut: string
+          succes: boolean
           type: string
         }
         Insert: {
+          brevo_message_id?: string | null
+          canal: string
           created_at?: string
-          destinataire: string
-          envoye_a?: string | null
-          erreur_message?: string | null
+          envoyee_at?: string
+          erreur?: string | null
           id?: string
-          resend_id?: string | null
           reservation_id: string
-          statut?: string
+          succes?: boolean
           type: string
         }
         Update: {
+          brevo_message_id?: string | null
+          canal?: string
           created_at?: string
-          destinataire?: string
-          envoye_a?: string | null
-          erreur_message?: string | null
+          envoyee_at?: string
+          erreur?: string | null
           id?: string
-          resend_id?: string | null
           reservation_id?: string
-          statut?: string
+          succes?: boolean
           type?: string
         }
         Relationships: [
