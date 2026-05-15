@@ -285,6 +285,9 @@ export type Database = {
       }
       rdv_reservations: {
         Row: {
+          annulation_token: string
+          annule_at: string | null
+          annule_par: string | null
           client_adresse: string
           client_complement: string | null
           client_email: string
@@ -309,6 +312,9 @@ export type Database = {
           ville_id: string
         }
         Insert: {
+          annulation_token?: string
+          annule_at?: string | null
+          annule_par?: string | null
           client_adresse: string
           client_complement?: string | null
           client_email: string
@@ -333,6 +339,9 @@ export type Database = {
           ville_id: string
         }
         Update: {
+          annulation_token?: string
+          annule_at?: string | null
+          annule_par?: string | null
           client_adresse?: string
           client_complement?: string | null
           client_email?: string

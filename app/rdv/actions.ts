@@ -10,7 +10,13 @@ import {
   genererCreneauxJour,
 } from "@/lib/rdv/dates";
 import { reservationSchema, type ReservationInput } from "@/lib/rdv/schema";
-import { envoyerEmailConfirmationClient } from "@/lib/brevo/emails";
+import { annulationSchema } from "@/lib/rdv/schema-annulation";
+import {
+  envoyerEmailConfirmationClient,
+  envoyerEmailAnnulationClient,
+  envoyerEmailAnnulationEquipe,
+} from "@/lib/brevo/emails";
+import type { AnnulationData } from "@/lib/brevo/templates/annulation-client";
 
 type Service = Database["public"]["Tables"]["rdv_services"]["Row"];
 type Ville = Database["public"]["Tables"]["rdv_villes"]["Row"];
@@ -358,7 +364,7 @@ export async function creerReservation(
       reference: reference,
       statut: "confirme",
     })
-    .select("id, reference")
+    .select("id, reference, annulation_token")
     .single();
 
   if (insertError || !reservation) {
@@ -388,6 +394,7 @@ export async function creerReservation(
       client_adresse: data.client_adresse,
       client_complement: data.client_complement ?? null,
       prix_centimes: data.prix_centimes,
+      annulation_token: reservation.annulation_token,
     }
   );
 
@@ -404,4 +411,123 @@ export async function creerReservation(
     reservation_id: reservation.id,
     reference: reference,
   };
+}
+
+export type AnnulerReservationResult =
+  | { success: true; reference: string }
+  | {
+      success: false;
+      error: string;
+      raison?: "deja_annule" | "deadline_depassee" | "introuvable" | "rdv_passe";
+    };
+
+/**
+ * Server Action : annule une réservation via son token d'annulation.
+ * Vérifie : token valide, résa existe, pas déjà annulée, RDV pas passé, deadline 48h.
+ */
+export async function annulerReservation(
+  token: string
+): Promise<AnnulerReservationResult> {
+  const validation = annulationSchema.safeParse({ token });
+  if (!validation.success) {
+    return { success: false, error: "Token invalide.", raison: "introuvable" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { data: reservation, error: fetchError } = await supabase
+    .from("rdv_reservations")
+    .select(`
+      id, reference, statut,
+      creneau_debut, creneau_fin,
+      client_prenom, client_nom, client_email,
+      client_telephone, client_adresse, client_complement,
+      prix_centimes,
+      annule_at,
+      service:rdv_services(nom),
+      ville:rdv_villes(nom, code_postal),
+      marque:rdv_marques_chaudiere(nom),
+      technicien:rdv_techniciens(prenom)
+    `)
+    .eq("annulation_token", token)
+    .maybeSingle();
+
+  if (fetchError || !reservation) {
+    return {
+      success: false,
+      error: "Réservation introuvable. Le lien est peut-être invalide.",
+      raison: "introuvable",
+    };
+  }
+
+  if (reservation.statut === "annule" || reservation.annule_at) {
+    return {
+      success: false,
+      error: "Cette réservation a déjà été annulée.",
+      raison: "deja_annule",
+    };
+  }
+
+  const maintenant = new Date();
+  const debutRdv = new Date(reservation.creneau_debut);
+
+  if (debutRdv < maintenant) {
+    return {
+      success: false,
+      error: "Ce rendez-vous est déjà passé.",
+      raison: "rdv_passe",
+    };
+  }
+
+  const heuresAvantRdv = (debutRdv.getTime() - maintenant.getTime()) / (1000 * 60 * 60);
+  if (heuresAvantRdv < 48) {
+    return {
+      success: false,
+      error: "L'annulation en ligne n'est plus possible (moins de 48h avant le rendez-vous). Merci d'appeler le 03 28 53 48 68.",
+      raison: "deadline_depassee",
+    };
+  }
+
+  const { error: updateError } = await supabase
+    .from("rdv_reservations")
+    .update({
+      statut: "annule",
+      annule_at: maintenant.toISOString(),
+      annule_par: "client",
+    })
+    .eq("id", reservation.id);
+
+  if (updateError) {
+    console.error("[annulerReservation] Erreur update:", updateError);
+    return { success: false, error: "Erreur lors de l'annulation. Réessayez ou appelez-nous." };
+  }
+
+  if (!reservation.reference || !reservation.client_prenom) {
+    console.error("[annulerReservation] Données manquantes pour envoi email:", reservation.id);
+    return { success: true, reference: reservation.reference ?? "" };
+  }
+
+  const emailData: AnnulationData = {
+    reference: reservation.reference,
+    client_prenom: reservation.client_prenom,
+    client_nom: reservation.client_nom,
+    client_email: reservation.client_email,
+    client_adresse: reservation.client_adresse,
+    client_complement: reservation.client_complement,
+    service_nom: reservation.service?.nom ?? "Intervention",
+    marque_nom: reservation.marque?.nom ?? null,
+    date_debut: reservation.creneau_debut,
+    date_fin: reservation.creneau_fin,
+    technicien_prenom: reservation.technicien?.prenom ?? "Notre technicien",
+    ville_nom: reservation.ville?.nom ?? "",
+    ville_cp: reservation.ville?.code_postal ?? "",
+    prix_centimes: reservation.prix_centimes,
+  };
+
+  await Promise.allSettled([
+    envoyerEmailAnnulationClient(emailData),
+    envoyerEmailAnnulationEquipe(emailData),
+  ]);
+
+  return { success: true, reference: reservation.reference };
 }

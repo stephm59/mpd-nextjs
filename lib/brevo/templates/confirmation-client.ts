@@ -18,6 +18,7 @@ export interface ConfirmationClientData {
   client_adresse: string;
   client_complement: string | null;
   prix_centimes: number;
+  annulation_token: string;
 }
 
 export function genererEmailConfirmationClient(data: ConfirmationClientData): { subject: string; html: string } {
@@ -28,6 +29,7 @@ export function genererEmailConfirmationClient(data: ConfirmationClientData): { 
   const dateLong = `${formatJourLong(dateDebut)} ${dateDebut.getFullYear()}`;
 
   const urlConfirmation = `https://www.monptitdepanneur.fr/rdv/confirmation/${data.reference}`;
+  const urlAnnulation = `https://www.monptitdepanneur.fr/rdv/annuler/${data.annulation_token}`;
 
   const content = `
     <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: #0f172a;">
@@ -111,8 +113,24 @@ export function genererEmailConfirmationClient(data: ConfirmationClientData): { 
       </ul>
     </div>
 
-    <p style="margin: 0; font-size: 13px; color: #94a3b8; text-align: center;">
-      Vous pouvez modifier ou annuler votre rendez-vous en nous appelant au 03 28 53 48 68.
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 25px 0 0;">
+      <tr>
+        <td align="center">
+          <p style="margin: 0 0 8px; font-size: 13px; color: #94a3b8;">
+            Vous ne pouvez plus venir ?
+          </p>
+          <a href="${urlAnnulation}" style="color: #dc2626; text-decoration: underline; font-size: 13px; font-weight: 500;">
+            Annuler ce rendez-vous
+          </a>
+          <p style="margin: 4px 0 0; font-size: 11px; color: #cbd5e1;">
+            (jusqu'à 48h avant le rendez-vous)
+          </p>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin: 20px 0 0; font-size: 13px; color: #94a3b8; text-align: center;">
+      Pour toute question, appelez-nous au 03 28 53 48 68.
     </p>
   `;
 
