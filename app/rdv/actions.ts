@@ -15,8 +15,10 @@ import {
   envoyerEmailConfirmationClient,
   envoyerEmailAnnulationClient,
   envoyerEmailAnnulationEquipe,
+  envoyerEmailNotificationEquipe,
 } from "@/lib/brevo/emails";
 import type { AnnulationData } from "@/lib/brevo/templates/annulation-client";
+import type { NotificationEquipeData } from "@/lib/brevo/templates/notification-equipe";
 
 type Service = Database["public"]["Tables"]["rdv_services"]["Row"];
 type Ville = Database["public"]["Tables"]["rdv_villes"]["Row"];
@@ -333,7 +335,7 @@ export async function creerReservation(
   const [serviceRes, villeRes, technicienRes, marqueRes] = await Promise.all([
     supabase.from("rdv_services").select("nom").eq("id", data.service_id).maybeSingle(),
     supabase.from("rdv_villes").select("nom, code_postal").eq("id", data.ville_id).maybeSingle(),
-    supabase.from("rdv_techniciens").select("prenom").eq("id", data.technicien_id).maybeSingle(),
+    supabase.from("rdv_techniciens").select("prenom, email_workspace").eq("id", data.technicien_id).maybeSingle(),
     data.marque_id
       ? supabase.from("rdv_marques_chaudiere").select("nom").eq("id", data.marque_id).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
@@ -342,6 +344,7 @@ export async function creerReservation(
   const villeNom = villeRes.data?.nom ?? null;
   const villeCP = villeRes.data?.code_postal ?? null;
   const technicienPrenom = technicienRes.data?.prenom ?? null;
+  const technicienEmail = technicienRes.data?.email_workspace ?? null;
   const marqueNom = marqueRes.data?.nom ?? null;
 
   const { data: reservation, error: insertError } = await supabase
@@ -375,36 +378,50 @@ export async function creerReservation(
     };
   }
 
-  const emailResult = await envoyerEmailConfirmationClient(
-    {
-      email: data.client_email,
-      prenom: data.client_prenom,
-      nom: data.client_nom,
-    },
-    {
-      reference: reference,
-      client_prenom: data.client_prenom,
-      service_nom: serviceNom ?? "Intervention",
-      marque_nom: marqueNom,
-      date_debut: data.date_debut,
-      date_fin: data.date_fin,
-      technicien_prenom: technicienPrenom ?? "Notre technicien",
-      ville_nom: villeNom ?? "",
-      ville_cp: villeCP ?? "",
-      client_adresse: data.client_adresse,
-      client_complement: data.client_complement ?? null,
-      prix_centimes: data.prix_centimes,
-      annulation_token: reservation.annulation_token,
-    }
-  );
+  const notificationData: NotificationEquipeData = {
+    reference: reference,
+    client_prenom: data.client_prenom,
+    client_nom: data.client_nom,
+    client_email: data.client_email,
+    client_telephone: data.client_telephone,
+    client_adresse: data.client_adresse,
+    client_complement: data.client_complement ?? null,
+    notes: data.notes ?? null,
+    service_nom: serviceNom ?? "Intervention",
+    marque_nom: marqueNom,
+    date_debut: data.date_debut,
+    date_fin: data.date_fin,
+    technicien_prenom: technicienPrenom ?? "Notre technicien",
+    ville_nom: villeNom ?? "",
+    ville_cp: villeCP ?? "",
+    prix_centimes: data.prix_centimes,
+  };
 
-  if (!emailResult.success) {
-    console.warn(
-      "[creerReservation] Email échoué mais réservation OK:",
-      reference,
-      emailResult.error
-    );
-  }
+  await Promise.allSettled([
+    envoyerEmailConfirmationClient(
+      {
+        email: data.client_email,
+        prenom: data.client_prenom,
+        nom: data.client_nom,
+      },
+      {
+        reference: reference,
+        client_prenom: data.client_prenom,
+        service_nom: serviceNom ?? "Intervention",
+        marque_nom: marqueNom,
+        date_debut: data.date_debut,
+        date_fin: data.date_fin,
+        technicien_prenom: technicienPrenom ?? "Notre technicien",
+        ville_nom: villeNom ?? "",
+        ville_cp: villeCP ?? "",
+        client_adresse: data.client_adresse,
+        client_complement: data.client_complement ?? null,
+        prix_centimes: data.prix_centimes,
+        annulation_token: reservation.annulation_token,
+      }
+    ),
+    envoyerEmailNotificationEquipe(notificationData, technicienEmail),
+  ]);
 
   return {
     success: true,
@@ -447,7 +464,7 @@ export async function annulerReservation(
       service:rdv_services(nom),
       ville:rdv_villes(nom, code_postal),
       marque:rdv_marques_chaudiere(nom),
-      technicien:rdv_techniciens(prenom)
+      technicien:rdv_techniciens(prenom, email_workspace)
     `)
     .eq("annulation_token", token)
     .maybeSingle();
@@ -524,9 +541,11 @@ export async function annulerReservation(
     prix_centimes: reservation.prix_centimes,
   };
 
+  const techEmail = reservation.technicien?.email_workspace ?? null;
+
   await Promise.allSettled([
     envoyerEmailAnnulationClient(emailData),
-    envoyerEmailAnnulationEquipe(emailData),
+    envoyerEmailAnnulationEquipe(emailData, techEmail),
   ]);
 
   return { success: true, reference: reservation.reference };

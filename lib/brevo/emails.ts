@@ -9,9 +9,13 @@ import {
   type AnnulationData,
 } from "./templates/annulation-client";
 import { genererEmailAnnulationEquipe } from "./templates/annulation-equipe";
+import {
+  genererEmailNotificationEquipe,
+  type NotificationEquipeData,
+} from "./templates/notification-equipe";
 
-const EQUIPE_EMAIL = "contact@monptitdepanneur.fr";
-const EQUIPE_NAME = "Mon p'tit Dépanneur";
+const EQUIPE_EMAIL = process.env.EMAIL_EQUIPE ?? "contact@monptitdepanneur.fr";
+const EQUIPE_NAME = process.env.EMAIL_EQUIPE_NAME ?? "Mon p'tit Dépanneur";
 
 export interface EnvoyerEmailResult {
   success: boolean;
@@ -99,18 +103,33 @@ export async function envoyerEmailAnnulationClient(
 }
 
 /**
- * Envoie l'email d'alerte annulation à l'équipe MPD.
- * Destinataire hardcodé pour l'instant (à externaliser en env var plus tard).
+ * Construit la liste des destinataires équipe.
+ * Toujours inclut EQUIPE_EMAIL. Ajoute le tech si fourni et différent de l'équipe.
+ */
+function buildDestinatairesEquipe(
+  techEmail: string | null,
+  techPrenom: string
+): Array<{ email: string; name: string }> {
+  const to = [{ email: EQUIPE_EMAIL, name: EQUIPE_NAME }];
+  if (techEmail && techEmail.toLowerCase() !== EQUIPE_EMAIL.toLowerCase()) {
+    to.push({ email: techEmail, name: techPrenom });
+  }
+  return to;
+}
+
+/**
+ * Envoie l'email d'alerte annulation à l'équipe MPD (+ technicien attribué si fourni).
  */
 export async function envoyerEmailAnnulationEquipe(
-  data: AnnulationData
+  data: AnnulationData,
+  techEmail: string | null
 ): Promise<EnvoyerEmailResult> {
   try {
     const { subject, html } = genererEmailAnnulationEquipe(data);
 
     const result = await brevoClient.transactionalEmails.sendTransacEmail({
       sender: BREVO_SENDER,
-      to: [{ email: EQUIPE_EMAIL, name: EQUIPE_NAME }],
+      to: buildDestinatairesEquipe(techEmail, data.technicien_prenom),
       subject,
       htmlContent: html,
     });
@@ -127,6 +146,43 @@ export async function envoyerEmailAnnulationEquipe(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[envoyerEmailAnnulationEquipe] Erreur:", message);
+    return {
+      success: false,
+      error: message,
+    };
+  }
+}
+
+/**
+ * Envoie l'email de notification équipe pour une nouvelle réservation.
+ * Destinataires : équipe (toujours) + tech attribué (si techEmail fourni et différent).
+ */
+export async function envoyerEmailNotificationEquipe(
+  data: NotificationEquipeData,
+  techEmail: string | null
+): Promise<EnvoyerEmailResult> {
+  try {
+    const { subject, html } = genererEmailNotificationEquipe(data);
+
+    const result = await brevoClient.transactionalEmails.sendTransacEmail({
+      sender: BREVO_SENDER,
+      to: buildDestinatairesEquipe(techEmail, data.technicien_prenom),
+      subject,
+      htmlContent: html,
+    });
+
+    console.log(
+      "[envoyerEmailNotificationEquipe] Email envoyé:",
+      result.messageId ?? "(no messageId)"
+    );
+
+    return {
+      success: true,
+      messageId: result.messageId ?? undefined,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[envoyerEmailNotificationEquipe] Erreur:", message);
     return {
       success: false,
       error: message,
