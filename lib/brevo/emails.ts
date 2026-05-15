@@ -17,6 +17,10 @@ import {
   genererEmailRappelJ1,
   type RappelJ1EmailData,
 } from "./templates/rappel-j1";
+import {
+  genererEmailContactEquipe,
+  type ContactEquipeData,
+} from "./templates/contact-equipe";
 
 const EQUIPE_EMAIL = process.env.EMAIL_EQUIPE ?? "contact@monptitdepanneur.fr";
 const EQUIPE_NAME = process.env.EMAIL_EQUIPE_NAME ?? "Mon p'tit Dépanneur";
@@ -226,6 +230,43 @@ export async function envoyerEmailRappelJ1(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[envoyerEmailRappelJ1] Erreur:", message);
+    return {
+      success: false,
+      error: message,
+    };
+  }
+}
+
+/**
+ * Envoie l'email du formulaire de contact à l'équipe MPD.
+ * replyTo = email du visiteur → Ophélie peut répondre directement au client.
+ */
+export async function envoyerEmailContactEquipe(
+  data: ContactEquipeData
+): Promise<EnvoyerEmailResult> {
+  try {
+    const { subject, html } = genererEmailContactEquipe(data);
+
+    const result = await brevoClient.transactionalEmails.sendTransacEmail({
+      sender: BREVO_SENDER,
+      to: [{ email: EQUIPE_EMAIL, name: EQUIPE_NAME }],
+      replyTo: { email: data.email, name: `${data.firstName} ${data.lastName}` },
+      subject,
+      htmlContent: html,
+    });
+
+    console.log(
+      "[envoyerEmailContactEquipe] Email envoyé:",
+      result.messageId ?? "(no messageId)"
+    );
+
+    return {
+      success: true,
+      messageId: result.messageId ?? undefined,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[envoyerEmailContactEquipe] Erreur:", message);
     return {
       success: false,
       error: message,
