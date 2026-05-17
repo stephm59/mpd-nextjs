@@ -8,6 +8,7 @@ import { formatPrice } from "@/lib/rdv/format";
 import { formatJourLong } from "@/lib/rdv/dates";
 import { formatInTimeZone } from "date-fns-tz";
 import type { Metadata } from "next";
+import HeaderSimple from "@/components/layout/HeaderSimple";
 
 export const metadata: Metadata = {
   title: "Confirmation de réservation | Mon p'tit Dépanneur",
@@ -61,7 +62,9 @@ export default async function ConfirmationPage({ params }: { params: Params }) {
   const heureFin = formatInTimeZone(dateFin, "Europe/Paris", "HH:mm");
 
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-8 lg:py-16">
+    <>
+      <HeaderSimple />
+      <main className="container mx-auto max-w-3xl px-4 py-8 lg:py-16">
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
           <CheckCircle2 className="w-10 h-10 text-green-600" />
@@ -226,6 +229,7 @@ export default async function ConfirmationPage({ params }: { params: Params }) {
           </Link>
         </Button>
       </div>
-    </main>
+      </main>
+    </>
   );
 }

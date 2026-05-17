@@ -9,6 +9,7 @@ import { formatJourLong } from "@/lib/rdv/dates";
 import { formatInTimeZone } from "date-fns-tz";
 import { AnnulerButton } from "./AnnulerButton";
 import type { Metadata } from "next";
+import HeaderSimple from "@/components/layout/HeaderSimple";
 
 export const metadata: Metadata = {
   title: "Annuler mon rendez-vous | Mon p'tit Dépanneur",
@@ -99,7 +100,9 @@ export default async function AnnulerPage({ params }: { params: Params }) {
   }
 
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-8 lg:py-16">
+    <>
+      <HeaderSimple />
+      <main className="container mx-auto max-w-3xl px-4 py-8 lg:py-16">
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 mb-4">
           <AlertTriangle className="w-10 h-10 text-amber-600" />
@@ -195,7 +198,8 @@ export default async function AnnulerPage({ params }: { params: Params }) {
       {reservation.reference && (
         <AnnulerButton token={token} reference={reservation.reference} />
       )}
-    </main>
+      </main>
+    </>
   );
 }
 
@@ -212,7 +216,9 @@ function EtatMessage({
 }) {
   const isWarning = type === "warning";
   return (
-    <main className="container mx-auto max-w-2xl px-4 py-16">
+    <>
+      <HeaderSimple />
+      <main className="container mx-auto max-w-2xl px-4 py-16">
       <div className="text-center">
         <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${isWarning ? "bg-amber-100" : "bg-slate-100"}`}>
           <AlertTriangle className={`w-10 h-10 ${isWarning ? "text-amber-600" : "text-slate-500"}`} />
@@ -253,6 +259,7 @@ function EtatMessage({
           <Link href="/rdv">Réserver un rendez-vous</Link>
         </Button>
       </div>
-    </main>
+      </main>
+    </>
   );
 }

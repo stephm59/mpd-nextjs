@@ -2,9 +2,6 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
-import StickyCallBar from '@/components/ui/StickyCallBar'
-import LocalReviewsWidget from '@/components/widgets/LocalReviewsWidget'
-import ChatDevisButton from '@/components/widgets/ChatDevisButton'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -40,9 +37,6 @@ export default function RootLayout({
       </head>
       <body style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
         {children}
-        <StickyCallBar />
-        <LocalReviewsWidget />
-        <ChatDevisButton />
 
         {/* Google Analytics GA4 */}
         <Script
