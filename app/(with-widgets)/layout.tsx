@@ -1,6 +1,6 @@
 import StickyCallBar from '@/components/ui/StickyCallBar'
 import LocalReviewsWidget from '@/components/widgets/LocalReviewsWidget'
-import ChatDevisButton from '@/components/widgets/ChatDevisButton'
+import QuickActionsButton from '@/components/widgets/QuickActionsButton'
 
 export default function WithWidgetsLayout({
   children,
@@ -12,7 +12,7 @@ export default function WithWidgetsLayout({
       {children}
       <StickyCallBar />
       <LocalReviewsWidget />
-      <ChatDevisButton />
+      <QuickActionsButton />
     </>
   )
 }
