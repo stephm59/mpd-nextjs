@@ -60,7 +60,10 @@ const nextConfig: NextConfig = {
       { source: '/blog/', destination: '/carnet', permanent: true },
       { source: '/blog/page/:path*', destination: '/carnet', permanent: true },
 
-      // WordPress obsolètes
+      // Fusion /contact dans /rdv (onglet) — DOIT être avant /contact/:path* ci-dessous
+      { source: '/contact', destination: '/rdv?tab=contact', permanent: true },
+
+      // WordPress obsolètes (catch-all : /contact/anything → accueil)
       { source: '/contact/:path*', destination: '/', permanent: true },
       { source: '/wp-content/:path*', destination: '/', permanent: true },
 
