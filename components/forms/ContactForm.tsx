@@ -31,6 +31,7 @@ interface ContactFormProps {
   title?: string
   description?: string
   inline?: boolean
+  defaultMessage?: string
 }
 
 export default function ContactForm({
@@ -39,6 +40,7 @@ export default function ContactForm({
   title = 'Demander un devis gratuit',
   description = 'Remplissez ce formulaire et nous vous recontacterons rapidement pour établir votre devis personnalisé et sans engagement.',
   inline = false,
+  defaultMessage = '',
 }: ContactFormProps) {
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState<string>('')
@@ -52,7 +54,10 @@ export default function ContactForm({
     setValue,
     watch,
     formState: { errors },
-  } = useForm<FormData>({ resolver: zodResolver(schema) })
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: { message: defaultMessage },
+  })
 
   const consentement = watch('consentement')
 

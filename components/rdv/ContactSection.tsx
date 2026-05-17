@@ -1,13 +1,20 @@
 'use client'
 
+import { useSearchParams } from 'next/navigation'
 import { MapPin, Phone, Clock } from 'lucide-react'
 import ContactForm from '@/components/forms/ContactForm'
 
 export function ContactSection() {
+  const searchParams = useSearchParams()
+  const defaultMessage =
+    searchParams.get('from') === 'panne'
+      ? 'Demande : panne ou autre problème'
+      : ''
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <div className="bg-white rounded-xl p-6 shadow-card">
-        <ContactForm inline />
+        <ContactForm inline defaultMessage={defaultMessage} />
       </div>
 
       <div className="space-y-6">

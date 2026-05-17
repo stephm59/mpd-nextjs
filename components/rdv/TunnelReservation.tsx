@@ -171,6 +171,12 @@ function Etape1ChoixService({
   services: Service[];
   onSelect: (s: Service) => void;
 }) {
+  const router = useRouter();
+
+  function handleAutreDemande() {
+    router.push("/rdv?tab=contact&from=panne", { scroll: false });
+  }
+
   return (
     <div>
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -206,6 +212,24 @@ function Etape1ChoixService({
             </div>
           </button>
         ))}
+
+        <button
+          onClick={handleAutreDemande}
+          className="group flex w-full items-center justify-between rounded-lg border border-border bg-background p-4 text-left transition-all hover:border-primary hover:bg-primary/5 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+        >
+          <div className="flex-1">
+            <p className="font-semibold text-foreground">Autre demande</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Panne ou question
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+              Nous écrire
+            </span>
+            <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+          </div>
+        </button>
       </div>
     </div>
   );

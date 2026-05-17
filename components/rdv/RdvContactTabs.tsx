@@ -80,8 +80,16 @@ export function RdvContactTabs({ services, villes, marques }: Props) {
               <strong>Important :</strong> si votre chaudière est en panne, ne réservez pas en ligne.{" "}
               <a href="tel:0328534868" className="text-urgent font-semibold underline">
                 Contactez-nous directement par téléphone
-              </a>{" "}
-              pour un dépannage rapide.
+              </a>
+              {" "}ou{" "}
+              <button
+                type="button"
+                onClick={() => changeTab('contact')}
+                className="text-urgent font-semibold underline"
+              >
+                écrivez-nous
+              </button>
+              {" "}pour un dépannage rapide.
             </p>
           </div>
         </>
