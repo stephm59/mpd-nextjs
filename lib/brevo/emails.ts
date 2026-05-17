@@ -21,6 +21,10 @@ import {
   genererEmailContactEquipe,
   type ContactEquipeData,
 } from "./templates/contact-equipe";
+import {
+  genererEmailAvisPostRdv,
+  type AvisPostRdvData,
+} from "./templates/avis-post-rdv";
 
 const EQUIPE_EMAIL = process.env.EMAIL_EQUIPE ?? "contact@monptitdepanneur.fr";
 const EQUIPE_NAME = process.env.EMAIL_EQUIPE_NAME ?? "Mon p'tit Dépanneur";
@@ -267,6 +271,42 @@ export async function envoyerEmailContactEquipe(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[envoyerEmailContactEquipe] Erreur:", message);
+    return {
+      success: false,
+      error: message,
+    };
+  }
+}
+
+/**
+ * Envoie l'email d'avis post-RDV (24h après la fin du RDV).
+ * CTA Google review + lien problème discret.
+ */
+export async function envoyerEmailAvisPostRdv(
+  data: AvisPostRdvData
+): Promise<EnvoyerEmailResult> {
+  try {
+    const { subject, html } = genererEmailAvisPostRdv(data);
+
+    const result = await brevoClient.transactionalEmails.sendTransacEmail({
+      sender: BREVO_SENDER,
+      to: [{ email: data.client_email, name: data.client_prenom }],
+      subject,
+      htmlContent: html,
+    });
+
+    console.log(
+      "[envoyerEmailAvisPostRdv] Email envoyé:",
+      result.messageId ?? "(no messageId)"
+    );
+
+    return {
+      success: true,
+      messageId: result.messageId ?? undefined,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[envoyerEmailAvisPostRdv] Erreur:", message);
     return {
       success: false,
       error: message,
