@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import { ConsentementCheckbox } from "@/components/ui/ConsentementCheckbox";
 import { ChevronRight, ArrowLeft, MapPin, Phone, Flame, Sparkles } from "lucide-react";
 import { formatDuration, formatPrice } from "@/lib/rdv/format";
 import { formatJourLong } from "@/lib/rdv/dates";
@@ -954,22 +954,13 @@ function Etape5Coordonnees({
         </div>
 
         <div className="rounded-md border border-border bg-muted/20 p-3">
-          <label htmlFor="cgv" className="flex items-start gap-3 cursor-pointer">
-            <Checkbox
-              id="cgv"
-              checked={cgvAcceptees}
-              onCheckedChange={(checked) => setCgvAcceptees(checked === true)}
-              disabled={isSubmitting}
-              className="mt-0.5"
-            />
-            <span className="text-sm text-foreground">
-              J&apos;accepte les <Link href="/cgv" target="_blank" rel="noopener noreferrer" className="text-primary underline">conditions générales de vente</Link> et la <Link href="/confidentialite" target="_blank" rel="noopener noreferrer" className="text-primary underline">politique de confidentialité</Link>.
-              <span className="text-destructive ml-1">*</span>
-            </span>
-          </label>
-          {fieldErrors.cgv_acceptees && (
-            <p className="mt-1 text-xs text-destructive">{fieldErrors.cgv_acceptees[0]}</p>
-          )}
+          <ConsentementCheckbox
+            id="cgv"
+            checked={cgvAcceptees}
+            onChange={setCgvAcceptees}
+            error={fieldErrors.cgv_acceptees?.[0]}
+            disabled={isSubmitting}
+          />
         </div>
 
         {globalError && (

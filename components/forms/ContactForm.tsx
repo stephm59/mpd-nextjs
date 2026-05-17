@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { ConsentementCheckbox } from '@/components/ui/ConsentementCheckbox'
 import { envoyerContactAction } from '@/app/(with-widgets)/contact/actions'
 
 const schema = z.object({
@@ -17,6 +18,9 @@ const schema = z.object({
   email: z.string().email('Email invalide'),
   phone: z.string().min(10, 'Numéro invalide'),
   message: z.string().min(10, 'Minimum 10 caractères'),
+  consentement: z.literal(true, {
+    message: 'Vous devez accepter pour continuer',
+  }),
 })
 
 type FormData = z.infer<typeof schema>
@@ -45,8 +49,12 @@ export default function ContactForm({
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) })
+
+  const consentement = watch('consentement')
 
   const onSubmit = async (data: FormData) => {
     setStatus('sending')
@@ -130,6 +138,13 @@ export default function ContactForm({
         <Textarea id="message" {...register('message')} rows={4} placeholder="Décrivez votre problème ou votre demande..." disabled={isLoading} />
         {errors.message && <p className="text-destructive text-xs">{errors.message.message}</p>}
       </div>
+
+      <ConsentementCheckbox
+        checked={consentement === true}
+        onChange={(c) => setValue('consentement', c as true, { shouldValidate: true })}
+        error={errors.consentement?.message}
+        disabled={isLoading}
+      />
 
       {status === 'error' && (
         <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg text-sm">

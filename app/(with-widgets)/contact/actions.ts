@@ -9,6 +9,9 @@ const contactSchema = z.object({
   email: z.string().email(),
   phone: z.string().min(10).max(20),
   message: z.string().min(10).max(5000),
+  consentement: z.literal(true, {
+    message: "Vous devez accepter pour continuer",
+  }),
 });
 
 export type ContactInput = z.infer<typeof contactSchema>;
