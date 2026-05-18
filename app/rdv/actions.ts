@@ -11,6 +11,8 @@ import {
 } from "@/lib/rdv/dates";
 import { reservationSchema, type ReservationInput } from "@/lib/rdv/schema";
 import { annulationSchema } from "@/lib/rdv/schema-annulation";
+import { createEvent, deleteEvent } from "@/lib/google/calendar";
+import { getTechniciensBusy, isTechAvailable } from "@/lib/google/availability";
 import {
   envoyerEmailConfirmationClient,
   envoyerEmailAnnulationClient,
@@ -265,6 +267,13 @@ export async function getCreneauxDisponibles(params: {
   const datePremier = getDatePremierJourReservable(delaiMin);
   const dateDernier = getDateDernierJourReservable(delaiMin, joursVisibles);
 
+  // Récupère les périodes d'occupation Google Calendar pour les techs compatibles.
+  // Si OAuth pas connecté ou tech sans email_google : busyByTech ne contiendra pas ce tech
+  // → considéré comme libre (fallback safe).
+  const techIds = techsDispos.map((t) => t.id);
+  const techsBusy = await getTechniciensBusy(techIds, datePremier, dateDernier);
+  const busyByTech = new Map(techsBusy.map((t) => [t.technicienId, t.busySlots]));
+
   const creneaux: CreneauDisponible[] = [];
   let jour = new Date(datePremier);
 
@@ -276,7 +285,12 @@ export async function getCreneauxDisponibles(params: {
       const creneauxJour = genererCreneauxJour(jour, plages, dureeMinutes);
 
       for (const c of creneauxJour) {
-        const techsLibres = techsDispos.filter(() => Math.random() > 0.3);
+        const techsLibres = techsDispos.filter((tech) => {
+          const busySlots = busyByTech.get(tech.id);
+          // Pas de data Google pour ce tech → considéré comme libre
+          if (!busySlots) return true;
+          return isTechAvailable(busySlots, c.debut, c.fin);
+        });
 
         for (const tech of techsLibres) {
           creneaux.push({
@@ -335,7 +349,7 @@ export async function creerReservation(
   const [serviceRes, villeRes, technicienRes, marqueRes] = await Promise.all([
     supabase.from("rdv_services").select("nom").eq("id", data.service_id).maybeSingle(),
     supabase.from("rdv_villes").select("nom, code_postal").eq("id", data.ville_id).maybeSingle(),
-    supabase.from("rdv_techniciens").select("prenom, email_workspace").eq("id", data.technicien_id).maybeSingle(),
+    supabase.from("rdv_techniciens").select("prenom, email_workspace, email_google").eq("id", data.technicien_id).maybeSingle(),
     data.marque_id
       ? supabase.from("rdv_marques_chaudiere").select("nom").eq("id", data.marque_id).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
@@ -345,6 +359,7 @@ export async function creerReservation(
   const villeCP = villeRes.data?.code_postal ?? null;
   const technicienPrenom = technicienRes.data?.prenom ?? null;
   const technicienEmail = technicienRes.data?.email_workspace ?? null;
+  const technicienGoogleEmail = technicienRes.data?.email_google ?? null;
   const marqueNom = marqueRes.data?.nom ?? null;
 
   const { data: reservation, error: insertError } = await supabase
@@ -376,6 +391,39 @@ export async function creerReservation(
       success: false,
       error: "Impossible de créer la réservation. Veuillez réessayer.",
     };
+  }
+
+  // Google Calendar : crée l'event dans le cal du tech (si email_google présent + OAuth connecté).
+  // Graceful degradation : un échec ici ne fait PAS échouer la réservation.
+  if (technicienGoogleEmail) {
+    try {
+      const event = await createEvent(technicienGoogleEmail, {
+        summary: `RDV ${reference} — ${data.client_prenom} ${data.client_nom}`,
+        description: [
+          `Service : ${serviceNom ?? "Intervention"}${marqueNom ? ` (${marqueNom})` : ""}`,
+          `Référence : ${reference}`,
+          `Téléphone : ${data.client_telephone}`,
+          `Email : ${data.client_email}`,
+          data.client_complement ? `Complément : ${data.client_complement}` : "",
+          data.notes ? `\nNotes :\n${data.notes}` : "",
+        ].filter(Boolean).join("\n"),
+        location: `${data.client_adresse}, ${villeCP ?? ""} ${villeNom ?? ""}`.trim(),
+        startDateTime: data.date_debut,
+        endDateTime: data.date_fin,
+      });
+
+      await supabase
+        .from("rdv_reservations")
+        .update({
+          google_event_id: event.eventId,
+          google_event_calendar_id: event.calendarId,
+          google_event_created_at: new Date().toISOString(),
+        })
+        .eq("id", reservation.id);
+    } catch (err) {
+      console.error("[creerReservation] Erreur Google Calendar:", err);
+      // Pas de throw : la résa reste créée en base, l'équipe pourra ajouter l'event manuellement
+    }
   }
 
   const notificationData: NotificationEquipeData = {
@@ -461,6 +509,7 @@ export async function annulerReservation(
       client_telephone, client_adresse, client_complement,
       prix_centimes,
       annule_at,
+      google_event_id, google_event_calendar_id,
       service:rdv_services(nom),
       ville:rdv_villes(nom, code_postal),
       marque:rdv_marques_chaudiere(nom),
@@ -517,6 +566,16 @@ export async function annulerReservation(
   if (updateError) {
     console.error("[annulerReservation] Erreur update:", updateError);
     return { success: false, error: "Erreur lors de l'annulation. Réessayez ou appelez-nous." };
+  }
+
+  // Google Calendar : supprime l'event (si lié). Graceful degradation.
+  if (reservation.google_event_id && reservation.google_event_calendar_id) {
+    try {
+      await deleteEvent(reservation.google_event_calendar_id, reservation.google_event_id);
+    } catch (err) {
+      console.error("[annulerReservation] Erreur Google Calendar:", err);
+      // Pas de throw : l'annulation reste effective en base
+    }
   }
 
   if (!reservation.reference || !reservation.client_prenom) {

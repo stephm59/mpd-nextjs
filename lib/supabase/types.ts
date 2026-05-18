@@ -141,6 +141,42 @@ export type Database = {
         }
         Relationships: []
       }
+      google_oauth_tokens: {
+        Row: {
+          access_token: string | null
+          access_token_expires_at: string | null
+          created_at: string | null
+          google_email: string
+          id: string
+          last_used_at: string | null
+          refresh_token: string
+          scopes: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          access_token_expires_at?: string | null
+          created_at?: string | null
+          google_email: string
+          id?: string
+          last_used_at?: string | null
+          refresh_token: string
+          scopes?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          access_token_expires_at?: string | null
+          created_at?: string | null
+          google_email?: string
+          id?: string
+          last_used_at?: string | null
+          refresh_token?: string
+          scopes?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       rdv_competences: {
         Row: {
           created_at: string
@@ -297,6 +333,8 @@ export type Database = {
           created_at: string
           creneau_debut: string
           creneau_fin: string
+          google_event_calendar_id: string | null
+          google_event_created_at: string | null
           google_event_id: string | null
           id: string
           ip_address: unknown
@@ -324,6 +362,8 @@ export type Database = {
           created_at?: string
           creneau_debut: string
           creneau_fin: string
+          google_event_calendar_id?: string | null
+          google_event_created_at?: string | null
           google_event_id?: string | null
           id?: string
           ip_address?: unknown
@@ -351,6 +391,8 @@ export type Database = {
           created_at?: string
           creneau_debut?: string
           creneau_fin?: string
+          google_event_calendar_id?: string | null
+          google_event_created_at?: string | null
           google_event_id?: string | null
           id?: string
           ip_address?: unknown
@@ -480,10 +522,9 @@ export type Database = {
       rdv_techniciens: {
         Row: {
           created_at: string
+          email_google: string | null
           email_workspace: string
           est_actif: boolean
-          google_calendar_id: string | null
-          google_refresh_token: string | null
           id: string
           ordre: number
           prenom: string
@@ -491,10 +532,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          email_google?: string | null
           email_workspace: string
           est_actif?: boolean
-          google_calendar_id?: string | null
-          google_refresh_token?: string | null
           id?: string
           ordre?: number
           prenom: string
@@ -502,10 +542,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          email_google?: string | null
           email_workspace?: string
           est_actif?: boolean
-          google_calendar_id?: string | null
-          google_refresh_token?: string | null
           id?: string
           ordre?: number
           prenom?: string
