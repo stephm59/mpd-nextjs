@@ -39,6 +39,9 @@ export default async function AdminProtectedLayout({
           <Link href="/admin/google" className="block px-3 py-2 rounded-md text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">
             Google Calendar
           </Link>
+          <Link href="/admin/regles" className="block px-3 py-2 rounded-md text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">
+            Règles &amp; config
+          </Link>
         </nav>
 
         <div className="p-4 border-t border-slate-200">
