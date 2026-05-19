@@ -10,6 +10,9 @@ import {
   getStatsParService,
 } from "@/lib/admin/stats";
 import { formatPrice } from "@/lib/rdv/format";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { resolvePeriod } from "@/lib/admin/period";
+import { PeriodSelector } from "@/components/admin/PeriodSelector";
 
 export const metadata: Metadata = {
   title: "Vue d'ensemble - Admin MPD",
@@ -18,25 +21,50 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminHomePage() {
-  const [kpis, statsParMois, statsParTech, statsParService] = await Promise.all([
-    getKpis(),
-    getStatsParMois(),
-    getStatsParTech(),
-    getStatsParService(),
-  ]);
+export default async function AdminHomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string; from?: string; to?: string }>;
+}) {
+  const params = await searchParams;
+  const period = resolvePeriod(params);
 
-  const moisActuelLabel = new Date().toLocaleDateString("fr-FR", {
-    month: "long",
-    year: "numeric",
-  });
+  const supabase = createAdminClient();
+
+  const [
+    kpis,
+    statsParMois,
+    statsParTech,
+    statsParService,
+    { count: nbMessagesMois },
+    { count: nbMessagesTotal },
+  ] = await Promise.all([
+    getKpis(period.from, period.to),
+    getStatsParMois(period.from, period.to),
+    getStatsParTech(period.from, period.to),
+    getStatsParService(period.from, period.to),
+    supabase
+      .from("contact_messages")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", period.from.toISOString())
+      .lte("created_at", period.to.toISOString()),
+    supabase
+      .from("contact_messages")
+      .select("*", { count: "exact", head: true }),
+  ]);
 
   return (
     <div>
       <h1 className="text-2xl font-bold text-slate-900 mb-2">Vue d&apos;ensemble</h1>
-      <p className="text-slate-500 mb-8 capitalize">{moisActuelLabel}</p>
+      <p className="text-slate-500 mb-4">{period.label}</p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <PeriodSelector
+        currentPreset={period.preset}
+        currentFrom={period.from}
+        currentTo={period.to}
+      />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <KpiCard
           label="RDV ce mois"
           value={kpis.rdvMois}
@@ -58,6 +86,11 @@ export default async function AdminHomePage() {
           label="RDV à venir"
           value={kpis.rdvAVenir}
           sublabel="Confirmés, futurs"
+        />
+        <KpiCard
+          label="Messages contact"
+          value={nbMessagesMois ?? 0}
+          sublabel={`${nbMessagesTotal ?? 0} au total`}
         />
       </div>
 

@@ -26,6 +26,7 @@ export default async function AdminReglesPage() {
     { count: nbVilles },
     { count: nbTarifs },
     { count: nbReservations },
+    { count: nbMessagesContact },
     googleTokens,
   ] = await Promise.all([
     supabase.from("rdv_parametres").select("*").order("cle"),
@@ -35,6 +36,7 @@ export default async function AdminReglesPage() {
     supabase.from("rdv_villes").select("*", { count: "exact", head: true }),
     supabase.from("rdv_tarifs_ville").select("*", { count: "exact", head: true }),
     supabase.from("rdv_reservations").select("*", { count: "exact", head: true }),
+    supabase.from("contact_messages").select("*", { count: "exact", head: true }),
     getPrimaryTokens(),
   ]);
 
@@ -182,11 +184,12 @@ export default async function AdminReglesPage() {
           </ul>
         </SectionCard>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <CounterCard icon={<MapPin className="w-5 h-5 text-rose-600" />} label="Villes desservies" value={nbVilles ?? 0} href="/admin/villes" />
           <CounterCard icon={<Euro className="w-5 h-5 text-emerald-600" />} label="Tarifs configurés" value={nbTarifs ?? 0} href="/admin/tarifs" />
           <CounterCard icon={<Users className="w-5 h-5 text-purple-600" />} label="Services" value={services?.length ?? 0} href="/admin/services" />
           <CounterCard icon={<Calendar className="w-5 h-5 text-blue-600" />} label="Réservations" value={nbReservations ?? 0} href="/admin/rdv" />
+          <CounterCard icon={<Mail className="w-5 h-5 text-blue-600" />} label="Messages contact" value={nbMessagesContact ?? 0} href="/admin" />
         </div>
 
       </div>

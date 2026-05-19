@@ -1,5 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { differenceInCalendarMonths, startOfMonth } from "date-fns";
 
 export interface KpiData {
   rdvMois: number;
@@ -27,29 +28,44 @@ export interface ServiceData {
   count: number;
 }
 
-export async function getKpis(): Promise<KpiData> {
-  const supabase = createAdminClient();
-
+function defaultPeriode(from?: Date, to?: Date): { debut: Date; fin: Date } {
   const now = new Date();
-  const debutMois = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const finMois = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString();
+  return {
+    debut: from ?? new Date(now.getFullYear(), now.getMonth(), 1),
+    fin: to ?? new Date(now.getFullYear(), now.getMonth() + 1, 1),
+  };
+}
 
-  const { data: rdvsMois } = await supabase
+function default12Months(from?: Date, to?: Date): { debut: Date; fin: Date } {
+  const now = new Date();
+  return {
+    debut: from ?? new Date(now.getFullYear(), now.getMonth() - 11, 1),
+    fin: to ?? now,
+  };
+}
+
+export async function getKpis(from?: Date, to?: Date): Promise<KpiData> {
+  const supabase = createAdminClient();
+  const { debut, fin } = defaultPeriode(from, to);
+
+  const { data: rdvsPeriode } = await supabase
     .from("rdv_reservations")
     .select("statut, prix_centimes")
-    .gte("creneau_debut", debutMois)
-    .lt("creneau_debut", finMois);
+    .gte("creneau_debut", debut.toISOString())
+    .lte("creneau_debut", fin.toISOString());
 
-  const total = rdvsMois?.length ?? 0;
-  const annulees = rdvsMois?.filter((r) => r.statut === "annule").length ?? 0;
+  const total = rdvsPeriode?.length ?? 0;
+  const annulees = rdvsPeriode?.filter((r) => r.statut === "annule").length ?? 0;
   const tauxAnnulation = total > 0 ? Math.round((annulees / total) * 100) : 0;
 
-  const caPotentiel = rdvsMois?.reduce((sum, r) => sum + r.prix_centimes, 0) ?? 0;
+  const caPotentiel = rdvsPeriode?.reduce((sum, r) => sum + r.prix_centimes, 0) ?? 0;
   const caReel =
-    rdvsMois
+    rdvsPeriode
       ?.filter((r) => r.statut !== "annule")
       .reduce((sum, r) => sum + r.prix_centimes, 0) ?? 0;
 
+  // RDV à venir : toujours basé sur "maintenant" (futur), indépendant de la période
+  const now = new Date();
   const { count: rdvAVenir } = await supabase
     .from("rdv_reservations")
     .select("id", { count: "exact", head: true })
@@ -66,21 +82,24 @@ export async function getKpis(): Promise<KpiData> {
   };
 }
 
-export async function getStatsParMois(): Promise<MoisData[]> {
+export async function getStatsParMois(from?: Date, to?: Date): Promise<MoisData[]> {
   const supabase = createAdminClient();
-
-  const now = new Date();
-  const debut = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  const { debut, fin } = default12Months(from, to);
 
   const { data: rdvs } = await supabase
     .from("rdv_reservations")
     .select("creneau_debut, statut")
     .gte("creneau_debut", debut.toISOString())
+    .lte("creneau_debut", fin.toISOString())
     .order("creneau_debut", { ascending: true });
 
+  // Nombre de mois à afficher (au moins 1)
+  const nbMois = Math.max(1, differenceInCalendarMonths(fin, debut) + 1);
+  const debutMois = startOfMonth(debut);
+
   const moisMap = new Map<string, { confirmes: number; annules: number; mois: string }>();
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(debut.getFullYear(), debut.getMonth() + i, 1);
+  for (let i = 0; i < nbMois; i++) {
+    const d = new Date(debutMois.getFullYear(), debutMois.getMonth() + i, 1);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     const label = d.toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
     moisMap.set(key, { confirmes: 0, annules: 0, mois: label });
@@ -103,18 +122,17 @@ export async function getStatsParMois(): Promise<MoisData[]> {
   }));
 }
 
-export async function getStatsParTech(): Promise<TechData[]> {
+export async function getStatsParTech(from?: Date, to?: Date): Promise<TechData[]> {
   const supabase = createAdminClient();
-
-  const now = new Date();
-  const debut = new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString();
+  const { debut, fin } = default12Months(from, to);
 
   const { data } = await supabase
     .from("rdv_reservations")
     .select(`
       technicien:rdv_techniciens(prenom)
     `)
-    .gte("creneau_debut", debut)
+    .gte("creneau_debut", debut.toISOString())
+    .lte("creneau_debut", fin.toISOString())
     .neq("statut", "annule");
 
   const map = new Map<string, number>();
@@ -128,18 +146,17 @@ export async function getStatsParTech(): Promise<TechData[]> {
     .sort((a, b) => b.count - a.count);
 }
 
-export async function getStatsParService(): Promise<ServiceData[]> {
+export async function getStatsParService(from?: Date, to?: Date): Promise<ServiceData[]> {
   const supabase = createAdminClient();
-
-  const now = new Date();
-  const debut = new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString();
+  const { debut, fin } = default12Months(from, to);
 
   const { data } = await supabase
     .from("rdv_reservations")
     .select(`
       service:rdv_services(nom)
     `)
-    .gte("creneau_debut", debut)
+    .gte("creneau_debut", debut.toISOString())
+    .lte("creneau_debut", fin.toISOString())
     .neq("statut", "annule");
 
   const map = new Map<string, number>();
