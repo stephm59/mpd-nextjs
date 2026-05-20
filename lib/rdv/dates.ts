@@ -1,5 +1,8 @@
 import { addDays, addMinutes, format, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
+import { fromZonedTime } from "date-fns-tz";
+
+const TZ = "Europe/Paris";
 
 export function getDatePremierJourReservable(delaiMinimumJours: number): Date {
   return startOfDay(addDays(new Date(), delaiMinimumJours));
@@ -55,10 +58,20 @@ export function genererCreneauxJour(
     const parsed = parsePlageHoraire(plage);
     if (!parsed) continue;
 
-    const plageDebut = new Date(jour);
-    plageDebut.setHours(parsed.debutH, parsed.debutM, 0, 0);
-    const plageFin = new Date(jour);
-    plageFin.setHours(parsed.finH, parsed.finM, 0, 0);
+    // Construit "YYYY-MM-DD" à partir du jour (en se basant sur les composantes locales du Date 'jour')
+    const y = jour.getFullYear();
+    const m = String(jour.getMonth() + 1).padStart(2, "0");
+    const d = String(jour.getDate()).padStart(2, "0");
+    const dateStr = `${y}-${m}-${d}`;
+    // Interprète les heures de plage comme étant en Europe/Paris, converties en instant UTC correct
+    const plageDebut = fromZonedTime(
+      `${dateStr}T${String(parsed.debutH).padStart(2, "0")}:${String(parsed.debutM).padStart(2, "0")}:00`,
+      TZ
+    );
+    const plageFin = fromZonedTime(
+      `${dateStr}T${String(parsed.finH).padStart(2, "0")}:${String(parsed.finM).padStart(2, "0")}:00`,
+      TZ
+    );
 
     let cursor = new Date(plageDebut);
     while (true) {
