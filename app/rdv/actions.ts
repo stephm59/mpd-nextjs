@@ -159,6 +159,31 @@ export async function getTarifByCodePostal(
   };
 }
 
+export async function getTarifByVilleId(
+  serviceId: string,
+  villeId: string
+): Promise<number | null> {
+  const supabase = createServerClient();
+  const { data: tarif, error } = await supabase
+    .from("rdv_tarifs_ville")
+    .select("prix_centimes")
+    .eq("service_id", serviceId)
+    .eq("ville_id", villeId)
+    .maybeSingle();
+  if (error) {
+    console.error("[getTarifByVilleId] Erreur:", error);
+    return null;
+  }
+  return tarif?.prix_centimes ?? null;
+}
+
+/** Durée d'un créneau en minutes selon la règle métier (101 € → 2h). */
+const DUREE_ENTRETIEN_101_MIN = 120;
+function dureeCreneauMinutes(dureeServiceParDefaut: number, prixCentimes: number | null): number {
+  if (prixCentimes === 10100) return DUREE_ENTRETIEN_101_MIN;
+  return dureeServiceParDefaut;
+}
+
 export async function getParametres(): Promise<Record<string, string>> {
   const supabase = createServerClient();
   const { data, error } = await supabase
@@ -217,13 +242,14 @@ export type CreneauDisponible = {
  */
 export async function getCreneauxDisponibles(params: {
   serviceId: string;
+  villeId: string;
   marqueId?: string | null;
   technicienIdPrefere?: string | null;
 }): Promise<CreneauDisponible[]> {
-  const { serviceId, marqueId, technicienIdPrefere } = params;
+  const { serviceId, villeId, marqueId, technicienIdPrefere } = params;
   const supabase = createServerClient();
 
-  const [parametres, serviceRes, techniciens] = await Promise.all([
+  const [parametres, serviceRes, techniciens, prixCentimes] = await Promise.all([
     getParametres(),
     supabase
       .from("rdv_services")
@@ -231,10 +257,11 @@ export async function getCreneauxDisponibles(params: {
       .eq("id", serviceId)
       .maybeSingle(),
     getTechniciensPourService(serviceId),
+    getTarifByVilleId(serviceId, villeId),
   ]);
 
   if (!serviceRes.data) return [];
-  const dureeMinutes = serviceRes.data.duree_minutes;
+  const dureeMinutes = dureeCreneauMinutes(serviceRes.data.duree_minutes, prixCentimes);
 
   const delaiMin = parseInt(parametres["delai_minimum_jours"] ?? "1", 10);
   const joursVisibles = parseInt(parametres["jours_visibles_futur"] ?? "30", 10);

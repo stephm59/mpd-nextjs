@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import Script from 'next/script'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
@@ -97,12 +98,12 @@ export default function EntreprisePage() {
           <section className="bg-primary text-white rounded-2xl p-12 text-center">
             <h2 className="text-3xl font-bold mb-4">Contactez-nous</h2>
             <p className="text-xl opacity-90 mb-6">21 Rue Edouard Delesalle, 59000 Lille</p>
-            <a
-              href="tel:0328534868"
+            <Link
+              href="/rdv"
               className="inline-block bg-white text-primary font-bold text-xl px-8 py-4 rounded-xl hover:bg-gray-100 transition-colors"
             >
-              03 28 53 48 68
-            </a>
+              Prendre rdv
+            </Link>
           </section>
         </div>
       </main>

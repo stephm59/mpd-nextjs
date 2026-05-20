@@ -5,11 +5,11 @@ import { RdvContactTabs } from "@/components/rdv/RdvContactTabs";
 import HeaderSimple from "@/components/layout/HeaderSimple";
 
 export const metadata: Metadata = {
-  title: "Réserver ou nous contacter | Mon p'tit Dépanneur",
-  description: "Réservez en ligne votre entretien chaudière ou votre devis à Lille et alentours. Ou contactez-nous directement par téléphone ou email.",
+  title: "Prendre rdv ou écrire à Mon p'tit Dépanneur",
+  description: "Un entretien de chaudière ? Une demande de devis ? Prenez rdv en ligne avec Mon p'tit Dépanneur en 3 clics.",
   openGraph: {
-    title: "Réserver ou nous contacter | Mon p'tit Dépanneur",
-    description: "Prenez rendez-vous ou contactez Mon p'tit Dépanneur à Lille.",
+    title: "Prendre rdv ou écrire à Mon p'tit Dépanneur",
+    description: "Un entretien de chaudière ? Une demande de devis ? Prenez rdv en ligne avec Mon p'tit Dépanneur en 3 clics.",
     type: "website",
   },
 };

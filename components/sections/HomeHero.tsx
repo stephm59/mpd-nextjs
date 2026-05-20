@@ -1,14 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Star, Clock, Shield, Wrench, Phone } from 'lucide-react'
+import Link from 'next/link'
+import { Star, Clock, Shield, Wrench, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import ContactForm from '@/components/forms/ContactForm'
 import { HERO_VIDEO_URL, HERO_POSTER } from '@/config/media'
 
 const features = [
-  { icon: Clock, title: 'Intervention < 1h', description: 'Dans Lille et environs', color: 'text-accent' },
+  { icon: Clock, title: 'Intervention rapide', description: 'Dans Lille et environs', color: 'text-accent' },
   { icon: Shield, title: 'Garantie décennale', description: 'Travaux assurés', color: 'text-success' },
   { icon: Wrench, title: 'Devis gratuit', description: 'Sans engagement', color: 'text-primary-light' },
   { icon: Star, title: 'Artisan de confiance', description: 'Service de qualité', color: 'text-accent' },
@@ -20,7 +20,6 @@ interface Props {
 }
 
 export default function HomeHero({ title, subtitle }: Props = {}) {
-  const [isFormOpen, setIsFormOpen] = useState(false)
   const [isDesktop, setIsDesktop] = useState(false)
 
   useEffect(() => {
@@ -73,23 +72,22 @@ export default function HomeHero({ title, subtitle }: Props = {}) {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Button
+                asChild
                 size="lg"
                 className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-elevated text-lg font-bold"
-                onClick={() => setIsFormOpen(true)}
               >
-                Demander un devis
+                <Link href="/rdv?tab=contact">Demander un devis</Link>
               </Button>
               <Button
                 asChild
                 variant="outline"
                 size="lg"
                 className="border-2 border-white text-white bg-black/20 hover:bg-white hover:text-primary transition-colors text-lg"
-                aria-label="Appeler Mon p'tit Dépanneur"
               >
-                <a href="tel:0328534868" className="flex items-center gap-3">
-                  <Phone className="w-5 h-5" />
-                  03 28 53 48 68
-                </a>
+                <Link href="/rdv" className="flex items-center gap-3">
+                  <Calendar className="w-5 h-5" />
+                  Prendre rdv
+                </Link>
               </Button>
             </div>
 
@@ -131,13 +129,6 @@ export default function HomeHero({ title, subtitle }: Props = {}) {
           </div>
         </div>
       </section>
-
-      <ContactForm
-        isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        title="Demander un devis gratuit"
-        description="Remplissez ce formulaire et nous vous recontacterons rapidement pour établir votre devis personnalisé et sans engagement."
-      />
     </>
   )
 }

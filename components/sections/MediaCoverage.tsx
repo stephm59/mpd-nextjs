@@ -1,15 +1,14 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Tv, Star, Phone, Play, Pause } from 'lucide-react'
+import Link from 'next/link'
+import { Tv, Star, Calendar, Play, Pause } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import ContactForm from '@/components/forms/ContactForm'
 
 const MEDIA_VIDEO_URL = 'https://pub-ee5d8554679a4a23a82caac56686992a.r2.dev/video-entretien-chaudiere.mp4'
 
 export default function MediaCoverage() {
   const [isPlaying, setIsPlaying] = useState(false)
-  const [isFormOpen, setIsFormOpen] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
 
   // Seek to first frame on mount so the video thumbnail shows the reportage, not a black frame
@@ -103,35 +102,28 @@ export default function MediaCoverage() {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
+                  asChild
                   variant="outline"
                   size="lg"
                   className="bg-white text-primary border-white hover:bg-white/90 font-semibold px-8"
-                  onClick={() => setIsFormOpen(true)}
                 >
-                  Recevoir un devis
+                  <Link href="/rdv?tab=contact">Recevoir un devis</Link>
                 </Button>
                 <Button
                   asChild
                   size="lg"
                   className="bg-accent text-white hover:bg-accent/90 font-bold px-8"
                 >
-                  <a href="tel:0328534868" className="inline-flex items-center gap-2">
-                    <Phone className="w-5 h-5" />
-                    03 28 53 48 68
-                  </a>
+                  <Link href="/rdv" className="inline-flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    Prendre rdv
+                  </Link>
                 </Button>
               </div>
             </div>
           </div>
         </div>
       </section>
-
-      <ContactForm
-        isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        title="Demander un devis gratuit"
-        description="Suite à votre demande de devis, nous vous recontacterons rapidement pour évaluer vos besoins et vous proposer une solution sur-mesure."
-      />
     </>
   )
 }

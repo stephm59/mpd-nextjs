@@ -16,7 +16,7 @@ import { formatDuration, formatPrice } from "@/lib/rdv/format";
 import { formatJourLong } from "@/lib/rdv/dates";
 import type { CreneauDisponible } from "@/app/rdv/actions";
 import {
-  getTarifByCodePostal,
+  getTarifByVilleId,
   getParametres,
   getCreneauxDisponibles,
   getTechniciensPourService,
@@ -259,12 +259,12 @@ function Etape2ChoixVille({
   function handleVilleClick(ville: Ville) {
     setErreur(null);
     startTransition(async () => {
-      const tarif = await getTarifByCodePostal(service.id, ville.code_postal);
-      if (!tarif) {
+      const prix = await getTarifByVilleId(service.id, ville.id);
+      if (prix === null) {
         setErreur("Impossible de récupérer le tarif. Veuillez réessayer.");
         return;
       }
-      onSelect(ville, tarif.prix_centimes);
+      onSelect(ville, prix);
     });
   }
 
@@ -494,6 +494,7 @@ function Etape4ChoixDateCreneau({
     setSelectedDate(null);
     getCreneauxDisponibles({
       serviceId: service.id,
+      villeId: ville.id,
       marqueId: marque?.id ?? null,
       technicienIdPrefere: technicienIdPrefere,
     }).then((tousLesCreneaux) => {
@@ -519,7 +520,7 @@ function Etape4ChoixDateCreneau({
         setSelectedDate(new Date(year, month - 1, day));
       }
     });
-  }, [service.id, marque?.id, technicienIdPrefere]);
+  }, [service.id, ville.id, marque?.id, technicienIdPrefere]);
 
   if (!parametres || creneauxParJour === null) {
     return (

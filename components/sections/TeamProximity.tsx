@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Phone } from 'lucide-react'
+import Link from 'next/link'
+import { Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ContactForm from '@/components/forms/ContactForm'
 
@@ -47,10 +48,10 @@ export default function TeamProximity() {
                   size="lg"
                   className="bg-accent text-white hover:bg-accent/90 font-bold px-8"
                 >
-                  <a href="tel:0328534868" className="flex items-center gap-2">
-                    <Phone className="w-5 h-5" />
-                    03 28 53 48 68
-                  </a>
+                  <Link href="/rdv" className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    Prendre rdv
+                  </Link>
                 </Button>
               </div>
             </div>

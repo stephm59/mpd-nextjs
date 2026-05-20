@@ -96,6 +96,7 @@ export async function GET(request: NextRequest) {
 
     const smsData = {
       date_debut: rdv.creneau_debut,
+      date_fin: rdv.creneau_fin,
       technicien_prenom: rdv.technicien?.prenom ?? "notre technicien",
     };
 
