@@ -31,6 +31,15 @@ export function genererEmailConfirmationClient(data: ConfirmationClientData): { 
   const urlConfirmation = `https://www.monptitdepanneur.fr/rdv/confirmation/${data.reference}`;
   const urlAnnulation = `https://www.monptitdepanneur.fr/rdv/annuler/${data.annulation_token}`;
 
+  const mentionPaiement = data.prix_centimes > 0
+    ? `
+    <div style="background-color: #f0fdf4; border-left: 4px solid #16a34a; padding: 16px 20px; border-radius: 4px; margin: 0 0 25px;">
+      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #14532d;">
+        <strong>Paiement sur place</strong> le jour de l'intervention, par chèque ou espèces. La carte bancaire n'est pas acceptée.
+      </p>
+    </div>`
+    : '';
+
   const content = `
     <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: #0f172a;">
       Bonjour ${data.client_prenom},
@@ -85,6 +94,7 @@ export function genererEmailConfirmationClient(data: ConfirmationClientData): { 
         </td>
       </tr>
     </table>
+    ${mentionPaiement}
 
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
       <tr>

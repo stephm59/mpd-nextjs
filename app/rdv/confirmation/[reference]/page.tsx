@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, Calendar, Clock, MapPin, User, Tag, Phone, ArrowLeft } from "lucide-react";
+import { CheckCircle2, Calendar, Clock, MapPin, User, Tag, Phone, ArrowLeft, Banknote } from "lucide-react";
 import { formatPrice } from "@/lib/rdv/format";
 import { formatJourLong } from "@/lib/rdv/dates";
 import { formatInTimeZone } from "date-fns-tz";
@@ -161,6 +161,17 @@ export default async function ConfirmationPage({ params }: { params: Params }) {
           </dl>
         </CardContent>
       </Card>
+
+      {reservation.prix_centimes > 0 && (
+        <Card className="mb-6 border-green-200 bg-green-50">
+          <CardContent className="p-4 flex items-start gap-3">
+            <Banknote className="w-5 h-5 text-green-700 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-green-900">
+              <strong>Paiement sur place</strong> le jour de l&apos;intervention, par chèque ou espèces. La carte bancaire n&apos;est pas acceptée.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="mb-6">
         <CardContent className="p-6">
