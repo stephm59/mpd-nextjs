@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -363,6 +363,8 @@ export type Database = {
           created_at: string
           creneau_debut: string
           creneau_fin: string
+          description_intervention: string | null
+          duree_personnalisee_minutes: number | null
           google_event_calendar_id: string | null
           google_event_created_at: string | null
           google_event_id: string | null
@@ -371,10 +373,14 @@ export type Database = {
           marque_id: string | null
           notes: string | null
           prix_centimes: number
+          prix_libre: string | null
           reference: string | null
-          service_id: string
+          service_id: string | null
+          service_nom_personnalise: string | null
           statut: string
           technicien_id: string
+          tiers_email: string | null
+          tiers_telephone: string | null
           updated_at: string
           user_agent: string | null
           ville_id: string
@@ -392,6 +398,8 @@ export type Database = {
           created_at?: string
           creneau_debut: string
           creneau_fin: string
+          description_intervention?: string | null
+          duree_personnalisee_minutes?: number | null
           google_event_calendar_id?: string | null
           google_event_created_at?: string | null
           google_event_id?: string | null
@@ -400,10 +408,14 @@ export type Database = {
           marque_id?: string | null
           notes?: string | null
           prix_centimes?: number
+          prix_libre?: string | null
           reference?: string | null
-          service_id: string
+          service_id?: string | null
+          service_nom_personnalise?: string | null
           statut?: string
           technicien_id: string
+          tiers_email?: string | null
+          tiers_telephone?: string | null
           updated_at?: string
           user_agent?: string | null
           ville_id: string
@@ -421,6 +433,8 @@ export type Database = {
           created_at?: string
           creneau_debut?: string
           creneau_fin?: string
+          description_intervention?: string | null
+          duree_personnalisee_minutes?: number | null
           google_event_calendar_id?: string | null
           google_event_created_at?: string | null
           google_event_id?: string | null
@@ -429,10 +443,14 @@ export type Database = {
           marque_id?: string | null
           notes?: string | null
           prix_centimes?: number
+          prix_libre?: string | null
           reference?: string | null
-          service_id?: string
+          service_id?: string | null
+          service_nom_personnalise?: string | null
           statut?: string
           technicien_id?: string
+          tiers_email?: string | null
+          tiers_telephone?: string | null
           updated_at?: string
           user_agent?: string | null
           ville_id?: string
