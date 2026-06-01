@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listerRdvs } from "@/lib/admin/rdv";
 import { RdvListClient } from "./RdvListClient";
@@ -38,7 +39,15 @@ export default async function RdvListPage({ searchParams }: PageProps) {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-900 mb-2">Réservations</h1>
+      <div className="flex items-start justify-between mb-2 gap-4">
+        <h1 className="text-2xl font-bold text-slate-900">Réservations</h1>
+        <Link
+          href="/admin/rdv/nouveau"
+          className="px-4 py-2 bg-slate-900 text-white rounded-md text-sm font-medium hover:bg-slate-800 whitespace-nowrap"
+        >
+          + Nouvelle réservation
+        </Link>
+      </div>
       <p className="text-slate-500 mb-6">
         {listeRes.total} RDV au total — page {listeRes.page} sur {listeRes.totalPages}
       </p>
