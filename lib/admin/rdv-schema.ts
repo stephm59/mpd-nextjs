@@ -3,7 +3,17 @@ import { z } from "zod";
 const TELEPHONE_FR_REGEX = /^0[1-9](\s?\d{2}){4}$|^0[1-9](\.\d{2}){4}$|^0[1-9]\d{8}$/;
 
 export const reservationAdminSchema = z.object({
-  service_id: z.string().uuid({ message: "Service invalide" }),
+  // Mode standard : service_id présent
+  service_id: z.string().uuid().nullable(),
+
+  // Mode perso : ces champs présents (et service_id null)
+  service_nom_personnalise: z.string().trim().min(2).max(100).nullable(),
+  duree_personnalisee_minutes: z.number().int().refine((v) => [60, 120, 180, 240].includes(v), {
+    message: "Durée invalide (60, 120, 180 ou 240 minutes attendues)",
+  }).nullable(),
+  description_intervention: z.string().trim().max(1000).nullable(),
+  prix_libre: z.string().trim().max(100).nullable(),
+
   ville_id: z.string().uuid({ message: "Ville invalide" }),
   marque_id: z.string().uuid().nullable(),
   technicien_id: z.string().uuid({ message: "Technicien invalide" }),
@@ -22,6 +32,14 @@ export const reservationAdminSchema = z.object({
   notes: z.string().trim().max(500).optional().nullable(),
 
   envoyer_email_client: z.boolean().default(true),
-});
+}).refine(
+  (data) =>
+    data.service_id !== null ||
+    (data.service_nom_personnalise !== null && data.duree_personnalisee_minutes !== null),
+  {
+    message:
+      "Service requis : service_id ou (service_nom_personnalise + duree_personnalisee_minutes)",
+  }
+);
 
 export type ReservationAdminInput = z.infer<typeof reservationAdminSchema>;

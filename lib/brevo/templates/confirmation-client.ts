@@ -18,6 +18,8 @@ export interface ConfirmationClientData {
   client_adresse: string;
   client_complement: string | null;
   prix_centimes: number;
+  prix_libre?: string | null;
+  description_intervention?: string | null;
   annulation_token: string;
 }
 
@@ -31,7 +33,17 @@ export function genererEmailConfirmationClient(data: ConfirmationClientData): { 
   const urlConfirmation = `https://www.monptitdepanneur.fr/rdv/confirmation/${data.reference}`;
   const urlAnnulation = `https://www.monptitdepanneur.fr/rdv/annuler/${data.annulation_token}`;
 
-  const mentionPaiement = data.prix_centimes > 0
+  const prixAffiche = data.prix_libre && data.prix_libre.trim().length > 0
+    ? data.prix_libre.trim()
+    : formatPrice(data.prix_centimes);
+
+  const aUnPrix = data.prix_centimes > 0 || (data.prix_libre !== null && data.prix_libre !== undefined && data.prix_libre.trim().length > 0);
+
+  const descriptionPerso = data.description_intervention && data.description_intervention.trim().length > 0
+    ? data.description_intervention.trim()
+    : null;
+
+  const mentionPaiement = aUnPrix
     ? `
     <div style="background-color: #f0fdf4; border-left: 4px solid #16a34a; padding: 16px 20px; border-radius: 4px; margin: 0 0 25px;">
       <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #14532d;">
@@ -90,10 +102,19 @@ export function genererEmailConfirmationClient(data: ConfirmationClientData): { 
       <tr>
         <td style="padding: 14px 16px; font-size: 16px; font-weight: 700; color: #0f172a;">Tarif TTC</td>
         <td style="padding: 14px 16px; font-size: 18px; font-weight: 700; color: ${COULEUR_PRIMAIRE}; text-align: right;">
-          ${formatPrice(data.prix_centimes)}
+          ${prixAffiche}
         </td>
       </tr>
     </table>
+    ${descriptionPerso ? `
+    <div style="background-color: #fafafa; border-left: 3px solid ${COULEUR_PRIMAIRE}; padding: 14px 18px; border-radius: 4px; margin: 0 0 25px;">
+      <p style="margin: 0 0 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">
+        Détails de l'intervention
+      </p>
+      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #334155; white-space: pre-wrap;">
+        ${descriptionPerso}
+      </p>
+    </div>` : ''}
     ${mentionPaiement}
 
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">

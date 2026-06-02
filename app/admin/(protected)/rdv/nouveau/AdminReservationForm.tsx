@@ -409,6 +409,7 @@ function EtapeDateTechs({
     setSelectedDate(null);
     getCreneauxDisponiblesAdmin({
       serviceId: service.id,
+      dureeMinutes: null,
       villeId: ville.id,
       technicienIds: techsCandidatsIds,
     })
@@ -676,6 +677,10 @@ function EtapeCoordonnees({
     startSubmit(async () => {
       const input: ReservationAdminInput = {
         service_id: service.id,
+        service_nom_personnalise: null,
+        duree_personnalisee_minutes: null,
+        description_intervention: null,
+        prix_libre: null,
         ville_id: ville.id,
         marque_id: marque?.id ?? null,
         technicien_id: technicienAttribue.id,

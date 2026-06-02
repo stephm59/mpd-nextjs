@@ -39,33 +39,45 @@ export async function getTechniciensActifs() {
  * Variante admin : pas de filtre compétence, pas de délai mini,
  * multi-techs candidats (au moins UN libre), créneaux passés exclus.
  *
- * Note : la durée est calculée comme dans le public (service.duree_minutes,
- * sauf si tarif ville = 10100c → 120 min).
+ * Modes :
+ * - Standard : serviceId fourni → durée déduite du service (avec règle 10100c → 120 min)
+ * - Perso : dureeMinutes fourni (priorité sur serviceId si les deux présents)
+ * - Aucun → retourne []
  */
 export async function getCreneauxDisponiblesAdmin(params: {
-  serviceId: string;
+  serviceId: string | null;
+  dureeMinutes: number | null;
   villeId: string;
   technicienIds: string[];
 }): Promise<CreneauAdmin[]> {
-  const { serviceId, villeId, technicienIds } = params;
+  const { serviceId, dureeMinutes: dureeManuelle, villeId, technicienIds } = params;
   if (technicienIds.length === 0) return [];
 
   const supabase = createServerClient();
 
   const [parametres, serviceRes, techsRes, prixCentimes] = await Promise.all([
     getParametres(),
-    supabase.from("rdv_services").select("duree_minutes").eq("id", serviceId).maybeSingle(),
+    serviceId
+      ? supabase.from("rdv_services").select("duree_minutes").eq("id", serviceId).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
     supabase
       .from("rdv_techniciens")
       .select("id, prenom, ordre")
       .in("id", technicienIds)
       .eq("est_actif", true),
-    getTarifByVilleId(serviceId, villeId),
+    serviceId ? getTarifByVilleId(serviceId, villeId) : Promise.resolve(0),
   ]);
 
-  if (!serviceRes.data) return [];
-  const dureeServiceParDefaut = serviceRes.data.duree_minutes;
-  const dureeMinutes = prixCentimes === 10100 ? 120 : dureeServiceParDefaut;
+  // Détermination de la durée (priorité au mode perso si présent)
+  let dureeMinutes: number;
+  if (dureeManuelle !== null) {
+    dureeMinutes = dureeManuelle;
+  } else if (serviceRes.data) {
+    const dureeService = serviceRes.data.duree_minutes;
+    dureeMinutes = prixCentimes === 10100 ? 120 : dureeService;
+  } else {
+    return [];
+  }
 
   const techsDispos = techsRes.data ?? [];
   if (techsDispos.length === 0) return [];
@@ -126,7 +138,7 @@ export type CreerReservationAdminResult =
   | { success: true; reservation_id: string; reference: string }
   | { success: false; error: string; fieldErrors?: Record<string, string[]> };
 
-/** Crée une réservation admin (règles relâchées, email client optionnel). */
+/** Crée une réservation admin (règles relâchées, email client optionnel, mode perso supporté). */
 export async function creerReservationAdmin(
   input: ReservationAdminInput
 ): Promise<CreerReservationAdminResult> {
@@ -141,11 +153,14 @@ export async function creerReservationAdmin(
     return { success: false, error: "Validation échouée", fieldErrors };
   }
   const data = result.data;
+  const modePerso = data.service_id === null;
   const reference = `RDV-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
   const supabase = createAdminClient();
 
   const [serviceRes, villeRes, technicienRes, marqueRes] = await Promise.all([
-    supabase.from("rdv_services").select("nom").eq("id", data.service_id).maybeSingle(),
+    data.service_id
+      ? supabase.from("rdv_services").select("nom").eq("id", data.service_id).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
     supabase.from("rdv_villes").select("nom, code_postal").eq("id", data.ville_id).maybeSingle(),
     supabase.from("rdv_techniciens").select("prenom, email_workspace, email_google").eq("id", data.technicien_id).maybeSingle(),
     data.marque_id
@@ -153,7 +168,8 @@ export async function creerReservationAdmin(
       : Promise.resolve({ data: null, error: null }),
   ]);
 
-  const serviceNom = serviceRes.data?.nom ?? "Intervention";
+  const serviceNom =
+    data.service_nom_personnalise ?? serviceRes.data?.nom ?? "Intervention";
   const villeNom = villeRes.data?.nom ?? "";
   const villeCP = villeRes.data?.code_postal ?? "";
   const technicienPrenom = technicienRes.data?.prenom ?? "Notre technicien";
@@ -164,6 +180,10 @@ export async function creerReservationAdmin(
     .from("rdv_reservations")
     .insert({
       service_id: data.service_id,
+      service_nom_personnalise: data.service_nom_personnalise,
+      duree_personnalisee_minutes: data.duree_personnalisee_minutes,
+      description_intervention: data.description_intervention,
+      prix_libre: data.prix_libre,
       ville_id: data.ville_id,
       marque_id: data.marque_id,
       technicien_id: data.technicien_id,
@@ -199,8 +219,9 @@ export async function creerReservationAdmin(
           `Téléphone : ${data.client_telephone}`,
           `Email : ${data.client_email}`,
           data.client_complement ? `Complément : ${data.client_complement}` : "",
+          data.description_intervention ? `\nDétails :\n${data.description_intervention}` : "",
           data.notes ? `\nNotes :\n${data.notes}` : "",
-          "\n(Créée depuis l'admin)",
+          modePerso ? "\n(Créée depuis l'admin — mode personnalisé)" : "\n(Créée depuis l'admin)",
         ].filter(Boolean).join("\n"),
         location: `${data.client_adresse}, ${villeCP} ${villeNom}`.trim(),
         startDateTime: data.date_debut,
@@ -237,6 +258,8 @@ export async function creerReservationAdmin(
           client_adresse: data.client_adresse,
           client_complement: data.client_complement ?? null,
           prix_centimes: data.prix_centimes,
+          prix_libre: data.prix_libre,
+          description_intervention: data.description_intervention,
           annulation_token: reservation.annulation_token,
         }
       );
