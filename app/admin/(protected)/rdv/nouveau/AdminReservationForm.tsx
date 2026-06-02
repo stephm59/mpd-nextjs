@@ -34,10 +34,20 @@ interface Props {
 }
 
 type EtapeNum = 1 | 2 | 3 | 4 | 5;
+type Etape = EtapeNum | "perso";
+
+interface PersoData {
+  nom: string;
+  dureeMinutes: number;
+  description: string;
+  prixLibre: string;
+}
 
 interface EtatForm {
-  etape: EtapeNum;
+  etape: Etape;
+  mode: "standard" | "perso";
   service: Service | null;
+  perso: PersoData | null;
   ville: Ville | null;
   prixCentimes: number | null;
   marque: Marque | null;
@@ -56,7 +66,9 @@ export function AdminReservationForm({
 }: Props) {
   const [etat, setEtat] = useState<EtatForm>({
     etape: 1,
+    mode: "standard",
     service: null,
+    perso: null,
     ville: null,
     prixCentimes: null,
     marque: null,
@@ -65,10 +77,35 @@ export function AdminReservationForm({
     creneau: null,
   });
 
-  const serviceAvecMarque = etat.service && SERVICES_AVEC_MARQUE.includes(etat.service.slug);
+  const serviceAvecMarque =
+    etat.mode === "standard" &&
+    etat.service !== null &&
+    SERVICES_AVEC_MARQUE.includes(etat.service.slug);
 
   function selectService(service: Service) {
-    setEtat({ ...etat, service, etape: 2, marque: null });
+    setEtat({
+      ...etat,
+      mode: "standard",
+      service,
+      perso: null,
+      etape: 2,
+      marque: null,
+    });
+  }
+
+  function selectPerso() {
+    setEtat({
+      ...etat,
+      mode: "perso",
+      service: null,
+      perso: { nom: "", dureeMinutes: 60, description: "", prixLibre: "" },
+      marque: null,
+      etape: "perso",
+    });
+  }
+
+  function validerPerso(perso: PersoData) {
+    setEtat({ ...etat, perso, etape: 2 });
   }
 
   function selectVille(ville: Ville, prixCentimes: number) {
@@ -87,26 +124,48 @@ export function AdminReservationForm({
     setEtat({ ...etat, techsCandidatsIds: ids });
   }
 
-  function retourEtape(etape: EtapeNum) {
+  function retourEtape(etape: Etape) {
     setEtat({ ...etat, etape });
   }
 
   function retourDepuisDateCreneau() {
-    setEtat({ ...etat, etape: serviceAvecMarque ? 3 : 2 });
+    if (serviceAvecMarque) retourEtape(3);
+    else retourEtape(2);
   }
+
+  function retourDepuisCoord() {
+    if (etat.mode === "standard" && serviceAvecMarque) retourEtape(4);
+    else retourEtape(3);
+  }
+
+  const serviceLabel =
+    etat.mode === "perso" ? (etat.perso?.nom ?? "") : (etat.service?.nom ?? "");
 
   return (
     <Card className="shadow-sm">
       <CardContent className="p-6 lg:p-8">
         {etat.etape === 1 && (
-          <EtapeService services={services} onSelect={selectService} />
+          <EtapeService
+            services={services}
+            onSelectService={selectService}
+            onSelectPerso={selectPerso}
+          />
         )}
 
-        {etat.etape === 2 && etat.service && (
-          <EtapeVille
-            service={etat.service}
-            villes={villes}
+        {etat.etape === "perso" && etat.perso && (
+          <EtapePersonnalise
+            initial={etat.perso}
             onBack={() => retourEtape(1)}
+            onValider={validerPerso}
+          />
+        )}
+
+        {etat.etape === 2 && (etat.service !== null || etat.perso !== null) && (
+          <EtapeVille
+            serviceLabel={serviceLabel}
+            serviceIdPourTarif={etat.service?.id ?? null}
+            villes={villes}
+            onBack={() => retourEtape(etat.mode === "perso" ? "perso" : 1)}
             onSelect={selectVille}
           />
         )}
@@ -122,10 +181,14 @@ export function AdminReservationForm({
         )}
 
         {((etat.etape === 3 && !serviceAvecMarque) || etat.etape === 4) &&
-          etat.service &&
+          (etat.service !== null || etat.perso !== null) &&
           etat.ville && (
             <EtapeDateTechs
-              service={etat.service}
+              serviceLabel={serviceLabel}
+              serviceIdPourCreneaux={etat.service?.id ?? null}
+              dureeMinutesPerso={
+                etat.mode === "perso" ? (etat.perso?.dureeMinutes ?? null) : null
+              }
               ville={etat.ville}
               marque={etat.marque}
               techniciens={techniciens}
@@ -137,19 +200,20 @@ export function AdminReservationForm({
           )}
 
         {etat.etape === 5 &&
-          etat.service &&
+          (etat.service !== null || etat.perso !== null) &&
           etat.ville &&
           etat.date &&
           etat.creneau &&
           etat.prixCentimes !== null && (
             <EtapeCoordonnees
               service={etat.service}
+              perso={etat.perso}
               ville={etat.ville}
               marque={etat.marque}
               date={etat.date}
               creneau={etat.creneau}
               prixCentimes={etat.prixCentimes}
-              onBack={() => setEtat({ ...etat, etape: serviceAvecMarque ? 4 : 3 })}
+              onBack={retourDepuisCoord}
             />
           )}
       </CardContent>
@@ -159,10 +223,12 @@ export function AdminReservationForm({
 
 function EtapeService({
   services,
-  onSelect,
+  onSelectService,
+  onSelectPerso,
 }: {
   services: Service[];
-  onSelect: (s: Service) => void;
+  onSelectService: (s: Service) => void;
+  onSelectPerso: () => void;
 }) {
   return (
     <div>
@@ -173,7 +239,7 @@ function EtapeService({
         {services.map((service) => (
           <button
             key={service.id}
-            onClick={() => onSelect(service)}
+            onClick={() => onSelectService(service)}
             className="group flex w-full items-center justify-between rounded-lg border border-border bg-background p-4 text-left transition-all hover:border-primary hover:bg-primary/5 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           >
             <div className="flex-1">
@@ -195,18 +261,184 @@ function EtapeService({
             </div>
           </button>
         ))}
+
+        <div className="my-3 flex items-center gap-3">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">ou</span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
+        <button
+          onClick={onSelectPerso}
+          className="group flex w-full items-center justify-between rounded-lg border-2 border-dashed border-violet-300 bg-violet-50/40 p-5 text-left transition-all hover:border-violet-500 hover:bg-violet-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
+        >
+          <div className="flex flex-1 items-center gap-3">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-violet-100">
+              <Sparkles className="h-5 w-5 text-violet-600" />
+            </div>
+            <div>
+              <p className="font-semibold text-violet-950">Personnalisé</p>
+              <p className="mt-0.5 text-sm text-violet-700/80">
+                Nom, durée, description et prix libres
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="rounded-md bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-700">
+              Sur mesure
+            </span>
+            <ChevronRight className="h-5 w-5 text-violet-500 transition-transform group-hover:translate-x-0.5" />
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EtapePersonnalise({
+  initial,
+  onBack,
+  onValider,
+}: {
+  initial: PersoData;
+  onBack: () => void;
+  onValider: (perso: PersoData) => void;
+}) {
+  const [nom, setNom] = useState(initial.nom);
+  const [dureeMinutes, setDureeMinutes] = useState(initial.dureeMinutes);
+  const [description, setDescription] = useState(initial.description);
+  const [prixLibre, setPrixLibre] = useState(initial.prixLibre);
+
+  const dureeOptions: Array<{ value: number; label: string }> = [
+    { value: 60, label: "1h" },
+    { value: 120, label: "2h" },
+    { value: 180, label: "3h" },
+    { value: 240, label: "4h" },
+  ];
+
+  const isValid =
+    nom.trim().length >= 2 &&
+    [60, 120, 180, 240].includes(dureeMinutes) &&
+    prixLibre.trim().length > 0;
+
+  function handleContinue() {
+    onValider({
+      nom: nom.trim(),
+      dureeMinutes,
+      description: description.trim(),
+      prixLibre: prixLibre.trim(),
+    });
+  }
+
+  return (
+    <div>
+      <Button variant="ghost" size="sm" onClick={onBack} className="mb-4">
+        <ArrowLeft className="mr-1 h-4 w-4" />
+        Retour
+      </Button>
+
+      <p className="text-xs font-medium uppercase tracking-wide text-violet-700">
+        Mode personnalisé
+      </p>
+      <h2 className="mt-1 text-xl font-semibold text-foreground">
+        Détails de l&apos;intervention personnalisée
+      </h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Ces informations apparaîtront dans l&apos;email du client et l&apos;agenda du technicien.
+      </p>
+
+      <div className="mt-6 space-y-5">
+        <div>
+          <label htmlFor="perso-nom" className="text-sm font-medium text-foreground">
+            Nom de l&apos;intervention <span className="text-destructive">*</span>
+          </label>
+          <Input
+            id="perso-nom"
+            type="text"
+            value={nom}
+            onChange={(e) => setNom(e.target.value)}
+            placeholder="Ex : Réparation fuite robinet, Pose mitigeur"
+            maxLength={100}
+            className="mt-1.5"
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-foreground">
+            Durée prévue <span className="text-destructive">*</span>
+          </label>
+          <div className="mt-1.5 grid grid-cols-4 gap-2">
+            {dureeOptions.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setDureeMinutes(opt.value)}
+                className={`rounded-md border p-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                  dureeMinutes === opt.value
+                    ? "border-accent bg-accent text-accent-foreground"
+                    : "border-border bg-background text-foreground hover:border-primary"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="perso-description" className="text-sm font-medium text-foreground">
+            Description{" "}
+            <span className="text-muted-foreground font-normal">(optionnel mais recommandé)</span>
+          </label>
+          <Textarea
+            id="perso-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Décrivez l'intervention. Ce texte apparaîtra dans l'email de confirmation et l'agenda du technicien."
+            maxLength={1000}
+            rows={5}
+            className="mt-1.5"
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            {description.length} / 1000 caractères
+          </p>
+        </div>
+
+        <div>
+          <label htmlFor="perso-prix" className="text-sm font-medium text-foreground">
+            Prix annoncé au client <span className="text-destructive">*</span>
+          </label>
+          <Input
+            id="perso-prix"
+            type="text"
+            value={prixLibre}
+            onChange={(e) => setPrixLibre(e.target.value)}
+            placeholder="Ex : 280 €, 350 € + matériel, à confirmer sur place"
+            maxLength={100}
+            className="mt-1.5"
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Ce texte sera affiché tel quel dans l&apos;email envoyé au client.
+          </p>
+        </div>
+
+        <Button onClick={handleContinue} size="lg" className="w-full" disabled={!isValid}>
+          Continuer
+        </Button>
       </div>
     </div>
   );
 }
 
 function EtapeVille({
-  service,
+  serviceLabel,
+  serviceIdPourTarif,
   villes,
   onBack,
   onSelect,
 }: {
-  service: Service;
+  serviceLabel: string;
+  serviceIdPourTarif: string | null;
   villes: Ville[];
   onBack: () => void;
   onSelect: (v: Ville, prixCentimes: number) => void;
@@ -221,8 +453,13 @@ function EtapeVille({
 
   function handleVilleClick(ville: Ville) {
     setErreur(null);
+    if (serviceIdPourTarif === null) {
+      // Mode perso : prix libre saisi à l'étape précédente, pas de tarif catalogue
+      onSelect(ville, 0);
+      return;
+    }
     startTransition(async () => {
-      const prix = await getTarifByVilleId(service.id, ville.id);
+      const prix = await getTarifByVilleId(serviceIdPourTarif, ville.id);
       if (prix === null) {
         setErreur("Impossible de récupérer le tarif. Veuillez réessayer.");
         return;
@@ -241,7 +478,7 @@ function EtapeVille({
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Étape 2</p>
       <h2 className="mt-1 text-xl font-semibold text-foreground">Dans quelle commune ?</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Service : <strong className="text-foreground">{service.nom}</strong>
+        Service : <strong className="text-foreground">{serviceLabel}</strong>
       </p>
 
       <div className="mt-6">
@@ -374,7 +611,9 @@ function EtapeMarque({
 }
 
 function EtapeDateTechs({
-  service,
+  serviceLabel,
+  serviceIdPourCreneaux,
+  dureeMinutesPerso,
   ville,
   marque,
   techniciens,
@@ -383,7 +622,9 @@ function EtapeDateTechs({
   onBack,
   onSelect,
 }: {
-  service: Service;
+  serviceLabel: string;
+  serviceIdPourCreneaux: string | null;
+  dureeMinutesPerso: number | null;
   ville: Ville;
   marque: Marque | null;
   techniciens: Technicien[];
@@ -408,8 +649,8 @@ function EtapeDateTechs({
     setCreneauxParJour(null);
     setSelectedDate(null);
     getCreneauxDisponiblesAdmin({
-      serviceId: service.id,
-      dureeMinutes: null,
+      serviceId: serviceIdPourCreneaux,
+      dureeMinutes: dureeMinutesPerso,
       villeId: ville.id,
       technicienIds: techsCandidatsIds,
     })
@@ -431,7 +672,7 @@ function EtapeDateTechs({
         }
       })
       .finally(() => setIsLoading(false));
-  }, [service.id, ville.id, techsCandidatsIds]);
+  }, [serviceIdPourCreneaux, dureeMinutesPerso, ville.id, techsCandidatsIds]);
 
   function toggleTech(id: string) {
     if (techsCandidatsIds.includes(id)) {
@@ -491,8 +732,9 @@ function EtapeDateTechs({
       </p>
       <h2 className="mt-1 text-xl font-semibold text-foreground">Techniciens et créneau</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        {service.nom} · {ville.nom} ({ville.code_postal})
+        {serviceLabel} · {ville.nom} ({ville.code_postal})
         {marque && ` · ${marque.nom}`}
+        {dureeMinutesPerso !== null && ` · Durée : ${formatDuration(dureeMinutesPerso)}`}
       </p>
 
       <div className="mt-6 rounded-md border border-border bg-muted/30 p-4">
@@ -631,6 +873,7 @@ function CreneauButton({
 
 function EtapeCoordonnees({
   service,
+  perso,
   ville,
   marque,
   date,
@@ -638,7 +881,8 @@ function EtapeCoordonnees({
   prixCentimes,
   onBack,
 }: {
-  service: Service;
+  service: Service | null;
+  perso: PersoData | null;
   ville: Ville;
   marque: Marque | null;
   date: Date;
@@ -668,6 +912,8 @@ function EtapeCoordonnees({
     adresse.trim().length >= 5;
 
   const technicienAttribue = creneau.techniciens_libres[0];
+  const serviceNomAffiche = perso ? perso.nom : (service?.nom ?? "");
+  const prixAffiche = perso ? perso.prixLibre : formatPrice(prixCentimes);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -675,18 +921,12 @@ function EtapeCoordonnees({
     setGlobalError(null);
 
     startSubmit(async () => {
-      const input: ReservationAdminInput = {
-        service_id: service.id,
-        service_nom_personnalise: null,
-        duree_personnalisee_minutes: null,
-        description_intervention: null,
-        prix_libre: null,
+      const baseInput = {
         ville_id: ville.id,
         marque_id: marque?.id ?? null,
         technicien_id: technicienAttribue.id,
         date_debut: creneau.debut,
         date_fin: creneau.fin,
-        prix_centimes: prixCentimes,
         client_prenom: prenom.trim(),
         client_nom: nom.trim(),
         client_email: email.trim(),
@@ -696,6 +936,33 @@ function EtapeCoordonnees({
         notes: notes.trim() || null,
         envoyer_email_client: envoyerEmail,
       };
+
+      let input: ReservationAdminInput;
+      if (perso) {
+        input = {
+          ...baseInput,
+          service_id: null,
+          service_nom_personnalise: perso.nom,
+          duree_personnalisee_minutes: perso.dureeMinutes,
+          description_intervention: perso.description || null,
+          prix_libre: perso.prixLibre,
+          prix_centimes: 0,
+        };
+      } else if (service) {
+        input = {
+          ...baseInput,
+          service_id: service.id,
+          service_nom_personnalise: null,
+          duree_personnalisee_minutes: null,
+          description_intervention: null,
+          prix_libre: null,
+          prix_centimes: prixCentimes,
+        };
+      } else {
+        // garde-fou : ne devrait jamais arriver, le parent garantit l'un des deux
+        setGlobalError("État incohérent : aucun service sélectionné.");
+        return;
+      }
 
       const result = await creerReservationAdmin(input);
 
@@ -738,10 +1005,23 @@ function EtapeCoordonnees({
       <div className="mt-4 rounded-md border border-border bg-muted/30 p-4">
         <p className="text-sm font-semibold text-foreground">Récapitulatif</p>
         <dl className="mt-2 space-y-1 text-sm">
-          <div className="flex justify-between">
+          <div className="flex items-center justify-between">
             <dt className="text-muted-foreground">Service</dt>
-            <dd className="font-medium text-foreground">{service.nom}</dd>
+            <dd className="font-medium text-foreground flex items-center gap-2">
+              <span>{serviceNomAffiche}</span>
+              {perso && (
+                <span className="inline-block rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-medium text-violet-700">
+                  Sur mesure
+                </span>
+              )}
+            </dd>
           </div>
+          {perso && (
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Durée</dt>
+              <dd className="font-medium text-foreground">{formatDuration(perso.dureeMinutes)}</dd>
+            </div>
+          )}
           {marque && (
             <div className="flex justify-between">
               <dt className="text-muted-foreground">Marque</dt>
@@ -770,9 +1050,15 @@ function EtapeCoordonnees({
             <dt className="text-muted-foreground">Technicien attribué</dt>
             <dd className="font-medium text-foreground">{technicienAttribue.prenom}</dd>
           </div>
+          {perso && perso.description && (
+            <div className="border-t border-border pt-2 mt-2">
+              <dt className="text-xs text-muted-foreground mb-1">Description</dt>
+              <dd className="text-sm text-foreground whitespace-pre-wrap">{perso.description}</dd>
+            </div>
+          )}
           <div className="mt-2 flex justify-between border-t border-border pt-2">
             <dt className="font-semibold text-foreground">Tarif</dt>
-            <dd className="font-bold text-foreground">{formatPrice(prixCentimes)}</dd>
+            <dd className="font-bold text-foreground">{prixAffiche}</dd>
           </div>
         </dl>
       </div>
