@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
       client_prenom, client_nom, client_email, client_telephone,
       client_adresse, client_complement,
       creneau_debut, creneau_fin, prix_centimes,
+      tiers_telephone,
       service:rdv_services(nom),
       ville:rdv_villes(nom, code_postal),
       marque:rdv_marques_chaudiere(nom),
@@ -56,7 +57,12 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const resultats: Array<{ reference: string; email: string; sms: string }> = [];
+  const resultats: Array<{
+    reference: string;
+    email: string;
+    sms: string;
+    sms_tiers: string;
+  }> = [];
 
   for (const rdv of rdvsArappeler) {
     const { data: dejaEnvoyeList } = await supabase
@@ -68,13 +74,13 @@ export async function GET(request: NextRequest) {
       .limit(1);
 
     if (dejaEnvoyeList && dejaEnvoyeList.length > 0) {
-      resultats.push({ reference: rdv.reference ?? "", email: "skip", sms: "skip" });
+      resultats.push({ reference: rdv.reference ?? "", email: "skip", sms: "skip", sms_tiers: "skip" });
       continue;
     }
 
     if (!rdv.reference || !rdv.client_prenom) {
       console.warn("[cron/rappels-j1] RDV avec données incomplètes:", rdv.id);
-      resultats.push({ reference: rdv.reference ?? "", email: "skip", sms: "skip" });
+      resultats.push({ reference: rdv.reference ?? "", email: "skip", sms: "skip", sms_tiers: "skip" });
       continue;
     }
 
@@ -100,16 +106,27 @@ export async function GET(request: NextRequest) {
       technicien_prenom: rdv.technicien?.prenom ?? "notre technicien",
     };
 
-    const [emailResult, smsResult] = await Promise.allSettled([
+    const tiersTel =
+      rdv.tiers_telephone && rdv.tiers_telephone.trim().length > 0
+        ? rdv.tiers_telephone
+        : null;
+
+    const [emailResult, smsResult, smsTiersResult] = await Promise.allSettled([
       envoyerEmailRappelJ1(
         { email: rdv.client_email, prenom: rdv.client_prenom, nom: rdv.client_nom },
         emailData
       ),
       envoyerSmsRappelJ1(rdv.client_telephone, smsData),
+      tiersTel
+        ? envoyerSmsRappelJ1(tiersTel, smsData)
+        : Promise.resolve({ success: true, messageId: undefined, error: undefined } as const),
     ]);
 
     const emailOK = emailResult.status === "fulfilled" && emailResult.value.success;
     const smsOK = smsResult.status === "fulfilled" && smsResult.value.success;
+    const smsTiersOK = tiersTel
+      ? smsTiersResult.status === "fulfilled" && smsTiersResult.value.success
+      : null;
 
     const emailMessageId =
       emailOK && emailResult.status === "fulfilled" ? emailResult.value.messageId ?? null : null;
@@ -129,7 +146,25 @@ export async function GET(request: NextRequest) {
           ? String(smsResult.reason)
           : null;
 
-    await supabase.from("rdv_notifications").insert([
+    const smsTiersMessageId =
+      tiersTel && smsTiersOK && smsTiersResult.status === "fulfilled"
+        ? smsTiersResult.value.messageId ?? null
+        : null;
+    const smsTiersErreur =
+      tiersTel && !smsTiersOK
+        ? smsTiersResult.status === "fulfilled"
+          ? smsTiersResult.value.error ?? null
+          : String((smsTiersResult as PromiseRejectedResult).reason)
+        : null;
+
+    const notifications: Array<{
+      reservation_id: string;
+      type: string;
+      canal: string;
+      succes: boolean;
+      brevo_message_id: string | null;
+      erreur: string | null;
+    }> = [
       {
         reservation_id: rdv.id,
         type: "rappel_j1",
@@ -146,12 +181,26 @@ export async function GET(request: NextRequest) {
         brevo_message_id: smsMessageId,
         erreur: smsErreur,
       },
-    ]);
+    ];
+
+    if (tiersTel) {
+      notifications.push({
+        reservation_id: rdv.id,
+        type: "rappel_j1",
+        canal: "sms",
+        succes: smsTiersOK as boolean,
+        brevo_message_id: smsTiersMessageId,
+        erreur: smsTiersErreur,
+      });
+    }
+
+    await supabase.from("rdv_notifications").insert(notifications);
 
     resultats.push({
       reference: rdv.reference,
       email: emailOK ? "ok" : "fail",
       sms: smsOK ? "ok" : "fail",
+      sms_tiers: tiersTel ? (smsTiersOK ? "ok" : "fail") : "skip",
     });
   }
 
