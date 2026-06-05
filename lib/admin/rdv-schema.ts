@@ -31,6 +31,11 @@ export const reservationAdminSchema = z.object({
   client_complement: z.string().trim().max(100).optional().nullable(),
   notes: z.string().trim().max(500).optional().nullable(),
 
+  tiers_email: z.string().trim().toLowerCase().email().max(100).optional().nullable(),
+  tiers_telephone: z.string().trim().regex(TELEPHONE_FR_REGEX, {
+    message: "Téléphone tiers français invalide",
+  }).optional().nullable(),
+
   envoyer_email_client: z.boolean().default(true),
 }).refine(
   (data) =>

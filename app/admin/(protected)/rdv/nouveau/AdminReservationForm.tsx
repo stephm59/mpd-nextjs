@@ -934,6 +934,8 @@ function EtapeCoordonnees({
         client_adresse: adresse.trim(),
         client_complement: complement.trim() || null,
         notes: notes.trim() || null,
+        tiers_email: null,
+        tiers_telephone: null,
         envoyer_email_client: envoyerEmail,
       };
 

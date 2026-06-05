@@ -41,7 +41,8 @@ export interface EnvoyerEmailResult {
  */
 export async function envoyerEmailConfirmationClient(
   destinataire: { email: string; prenom: string; nom: string },
-  data: ConfirmationClientData
+  data: ConfirmationClientData,
+  cc?: string[]
 ): Promise<EnvoyerEmailResult> {
   try {
     const { subject, html } = genererEmailConfirmationClient(data);
@@ -52,6 +53,7 @@ export async function envoyerEmailConfirmationClient(
         email: destinataire.email,
         name: `${destinataire.prenom} ${destinataire.nom}`,
       }],
+      ...(cc && cc.length > 0 ? { cc: cc.map((email) => ({ email })) } : {}),
       subject,
       htmlContent: html,
     });
@@ -80,7 +82,8 @@ export async function envoyerEmailConfirmationClient(
  * Ne jette pas d'erreur : si Brevo plante, on log et on continue.
  */
 export async function envoyerEmailAnnulationClient(
-  data: AnnulationData
+  data: AnnulationData,
+  cc?: string[]
 ): Promise<EnvoyerEmailResult> {
   try {
     const { subject, html } = genererEmailAnnulationClient(data);
@@ -91,6 +94,7 @@ export async function envoyerEmailAnnulationClient(
         email: data.client_email,
         name: `${data.client_prenom} ${data.client_nom}`,
       }],
+      ...(cc && cc.length > 0 ? { cc: cc.map((email) => ({ email })) } : {}),
       subject,
       htmlContent: html,
     });

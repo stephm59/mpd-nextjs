@@ -54,6 +54,7 @@ export async function annulerRdvAdminAction(id: string): Promise<ActionResult> {
       creneau_fin,
       prix_centimes,
       service_nom_personnalise,
+      tiers_email,
       statut,
       google_event_id,
       google_event_calendar_id,
@@ -127,9 +128,11 @@ export async function annulerRdvAdminAction(id: string): Promise<ActionResult> {
 
   const techEmail = reservation.technicien?.email_workspace ?? null;
 
+  const ccAnnulation = reservation.tiers_email ? [reservation.tiers_email] : undefined;
+
   // Envoi des 2 emails en parallèle (graceful degradation : un échec n'arrête pas l'autre)
   await Promise.allSettled([
-    envoyerEmailAnnulationClient(emailData),
+    envoyerEmailAnnulationClient(emailData, ccAnnulation),
     envoyerEmailAnnulationEquipe(emailData, techEmail),
   ]);
 

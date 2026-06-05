@@ -197,6 +197,8 @@ export async function creerReservationAdmin(
       client_adresse: data.client_adresse,
       client_complement: data.client_complement,
       notes: data.notes,
+      tiers_email: data.tiers_email ?? null,
+      tiers_telephone: data.tiers_telephone ?? null,
       reference,
       statut: "confirme",
     })
@@ -243,6 +245,7 @@ export async function creerReservationAdmin(
   // Email confirmation client (sauf si Ophélie a décoché la case)
   if (data.envoyer_email_client) {
     try {
+      const cc = data.tiers_email ? [data.tiers_email] : undefined;
       await envoyerEmailConfirmationClient(
         { email: data.client_email, prenom: data.client_prenom, nom: data.client_nom },
         {
@@ -261,7 +264,8 @@ export async function creerReservationAdmin(
           prix_libre: data.prix_libre,
           description_intervention: data.description_intervention,
           annulation_token: reservation.annulation_token,
-        }
+        },
+        cc
       );
     } catch (err) {
       console.error("[creerReservationAdmin] Erreur email client:", err);
