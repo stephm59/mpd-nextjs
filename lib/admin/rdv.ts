@@ -161,6 +161,7 @@ export async function listerRdvs(filtres: RdvFiltres): Promise<RdvListePaginee> 
 }
 
 export interface RdvDetail extends RdvListe {
+  prix_libre: string | null;
   client_adresse: string;
   client_complement: string | null;
   notes: string | null;
@@ -182,6 +183,7 @@ export async function getRdvDetail(id: string): Promise<RdvDetail | null> {
       creneau_fin,
       statut,
       prix_centimes,
+      prix_libre,
       client_prenom,
       client_nom,
       client_email,
@@ -204,6 +206,7 @@ export async function getRdvDetail(id: string): Promise<RdvDetail | null> {
   if (error || !data) return null;
 
   const raw = data as unknown as RawRow & {
+    prix_libre: string | null;
     client_adresse: string;
     client_complement: string | null;
     notes: string | null;
@@ -214,6 +217,7 @@ export async function getRdvDetail(id: string): Promise<RdvDetail | null> {
 
   return {
     ...flatten(raw),
+    prix_libre: raw.prix_libre,
     client_adresse: raw.client_adresse,
     client_complement: raw.client_complement,
     notes: raw.notes,

@@ -12,6 +12,7 @@ interface RdvDetail {
   creneau_fin: string;
   statut: string;
   prix_centimes: number;
+  prix_libre: string | null;
   marque_nom: string | null;
   notes: string | null;
   annule_at: string | null;
@@ -84,7 +85,11 @@ export function RdvDetailClient({ rdv }: Props) {
               <p><span className="text-slate-500">Service :</span> {rdv.service_nom}</p>
               {rdv.marque_nom && <p><span className="text-slate-500">Marque :</span> {rdv.marque_nom}</p>}
               <p><span className="text-slate-500">Tech :</span> {rdv.technicien_prenom}</p>
-              <p><span className="text-slate-500">Prix :</span> {(rdv.prix_centimes / 100).toFixed(2).replace(/\.00$/, "")} €</p>
+              <p><span className="text-slate-500">Prix :</span> {
+                rdv.prix_libre && rdv.prix_libre.trim().length > 0
+                  ? rdv.prix_libre
+                  : `${(rdv.prix_centimes / 100).toFixed(2).replace(/\.00$/, "")} €`
+              }</p>
               <p><span className="text-slate-500">Statut :</span> {isAnnule ? <span className="text-red-700 font-medium">Annulé</span> : <span className="text-emerald-700 font-medium">Confirmé</span>}</p>
               {rdv.notes && (
                 <div className="pt-2">
