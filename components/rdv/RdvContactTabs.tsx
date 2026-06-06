@@ -6,8 +6,8 @@ import { TunnelReservation } from '@/components/rdv/TunnelReservation'
 import { ContactSection } from '@/components/rdv/ContactSection'
 import { cn } from '@/lib/utils'
 import type { Database } from '@/lib/supabase/types'
+import type { Service } from '@/app/rdv/actions'
 
-type Service = Database['public']['Tables']['rdv_services']['Row']
 type Ville = Database['public']['Tables']['rdv_villes']['Row']
 type Marque = Database['public']['Tables']['rdv_marques_chaudiere']['Row']
 

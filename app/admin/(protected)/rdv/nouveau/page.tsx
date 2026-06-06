@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getServices } from "@/app/rdv/actions";
 import { getTechniciensActifs } from "./actions";
 import { AdminReservationForm } from "./AdminReservationForm";
 
@@ -14,8 +15,8 @@ export const dynamic = "force-dynamic";
 
 export default async function NouveauRdvPage() {
   const supabase = createAdminClient();
-  const [servicesRes, villesRes, marquesRes, techniciens] = await Promise.all([
-    supabase.from("rdv_services").select("*").eq("est_actif", true).order("ordre"),
+  const [services, villesRes, marquesRes, techniciens] = await Promise.all([
+    getServices(),
     supabase.from("rdv_villes").select("*").eq("est_active", true).order("nom"),
     supabase.from("rdv_marques_chaudiere").select("*").eq("est_active", true).order("ordre"),
     getTechniciensActifs(),
@@ -35,7 +36,7 @@ export default async function NouveauRdvPage() {
         Créez une réservation pour un client. Toutes les règles du tunnel public sont relâchées.
       </p>
       <AdminReservationForm
-        services={servicesRes.data ?? []}
+        services={services}
         villes={villesRes.data ?? []}
         marques={marquesRes.data ?? []}
         techniciens={techniciens}

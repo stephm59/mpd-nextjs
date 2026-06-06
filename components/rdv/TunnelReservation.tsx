@@ -14,7 +14,7 @@ import { ConsentementCheckbox } from "@/components/ui/ConsentementCheckbox";
 import { ChevronRight, ArrowLeft, MapPin, Phone, Flame, Sparkles } from "lucide-react";
 import { formatDuration, formatPrice } from "@/lib/rdv/format";
 import { formatJourLong } from "@/lib/rdv/dates";
-import type { CreneauDisponible } from "@/app/rdv/actions";
+import type { CreneauDisponible, Service } from "@/app/rdv/actions";
 import {
   getTarifByVilleId,
   getParametres,
@@ -24,7 +24,6 @@ import {
 } from "@/app/rdv/actions";
 import type { ReservationInput } from "@/lib/rdv/schema";
 
-type Service = Database["public"]["Tables"]["rdv_services"]["Row"];
 type Ville = Database["public"]["Tables"]["rdv_villes"]["Row"];
 type Marque = Database["public"]["Tables"]["rdv_marques_chaudiere"]["Row"];
 
@@ -206,7 +205,11 @@ function Etape1ChoixService({
                   Gratuit
                 </span>
               ) : (
-                <span className="text-sm text-muted-foreground">à partir de 91 €</span>
+                <span className="text-sm text-muted-foreground">
+                  {service.prix_min_centimes !== null && service.prix_min_centimes !== undefined
+                    ? `à partir de ${formatPrice(service.prix_min_centimes)}`
+                    : "Tarif sur demande"}
+                </span>
               )}
               <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
             </div>

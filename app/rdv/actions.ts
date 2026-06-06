@@ -22,7 +22,10 @@ import {
 import type { AnnulationData } from "@/lib/brevo/templates/annulation-client";
 import type { NotificationEquipeData } from "@/lib/brevo/templates/notification-equipe";
 
-type Service = Database["public"]["Tables"]["rdv_services"]["Row"];
+type ServiceBase = Database["public"]["Tables"]["rdv_services"]["Row"];
+export type Service = ServiceBase & {
+  prix_min_centimes: number | null;
+};
 type Ville = Database["public"]["Tables"]["rdv_villes"]["Row"];
 type Marque = Database["public"]["Tables"]["rdv_marques_chaudiere"]["Row"];
 
@@ -35,21 +38,39 @@ const VILLES_LILLE_BALLON_IDS = [
 const DUREE_BALLON_LILLE_MIN = 30;
 
 /**
- * Récupère tous les services actifs, triés par ordre.
+ * Récupère tous les services actifs, triés par ordre,
+ * enrichis avec le prix minimum (toutes villes confondues).
  */
 export async function getServices(): Promise<Service[]> {
   const supabase = createServerClient();
-  const { data, error } = await supabase
-    .from("rdv_services")
-    .select("*")
-    .eq("est_actif", true)
-    .order("ordre", { ascending: true });
 
-  if (error) {
-    console.error("[getServices] Erreur Supabase:", error);
+  const [servicesRes, tarifsRes] = await Promise.all([
+    supabase.from("rdv_services").select("*").eq("est_actif", true).order("ordre", { ascending: true }),
+    supabase.from("rdv_tarifs_ville").select("service_id, prix_centimes"),
+  ]);
+
+  if (servicesRes.error) {
+    console.error("[getServices] Erreur Supabase services:", servicesRes.error);
     return [];
   }
-  return data ?? [];
+  if (tarifsRes.error) {
+    console.error("[getServices] Erreur Supabase tarifs:", tarifsRes.error);
+    // on continue quand même, prix_min_centimes sera null
+  }
+
+  // Calculer le MIN par service côté JS
+  const prixMinByService = new Map<string, number>();
+  for (const t of tarifsRes.data ?? []) {
+    const current = prixMinByService.get(t.service_id);
+    if (current === undefined || t.prix_centimes < current) {
+      prixMinByService.set(t.service_id, t.prix_centimes);
+    }
+  }
+
+  return (servicesRes.data ?? []).map((s) => ({
+    ...s,
+    prix_min_centimes: prixMinByService.get(s.id) ?? null,
+  }));
 }
 
 /**
