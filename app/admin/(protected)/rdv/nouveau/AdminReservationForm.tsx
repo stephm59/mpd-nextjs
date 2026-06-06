@@ -898,7 +898,18 @@ function EtapeCoordonnees({
   const [adresse, setAdresse] = React.useState("");
   const [complement, setComplement] = React.useState("");
   const [notes, setNotes] = React.useState("");
+  const [tiersOuvert, setTiersOuvert] = React.useState(false);
+  const [tiersEmail, setTiersEmail] = React.useState("");
+  const [tiersTelephone, setTiersTelephone] = React.useState("");
   const [envoyerEmail, setEnvoyerEmail] = React.useState(true);
+
+  function toggleTiers() {
+    if (tiersOuvert) {
+      setTiersEmail("");
+      setTiersTelephone("");
+    }
+    setTiersOuvert(!tiersOuvert);
+  }
 
   const [isSubmitting, startSubmit] = React.useTransition();
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string[]>>({});
@@ -934,8 +945,8 @@ function EtapeCoordonnees({
         client_adresse: adresse.trim(),
         client_complement: complement.trim() || null,
         notes: notes.trim() || null,
-        tiers_email: null,
-        tiers_telephone: null,
+        tiers_email: tiersEmail.trim() ? tiersEmail.trim().toLowerCase() : null,
+        tiers_telephone: tiersTelephone.trim() ? tiersTelephone.trim() : null,
         envoyer_email_client: envoyerEmail,
       };
 
@@ -1200,6 +1211,76 @@ function EtapeCoordonnees({
             className="mt-1.5"
             disabled={isSubmitting}
           />
+        </div>
+
+        <div className="border-t border-border pt-4">
+          {!tiersOuvert ? (
+            <button
+              type="button"
+              onClick={() => setTiersOuvert(true)}
+              disabled={isSubmitting}
+              className="text-sm font-medium text-primary hover:text-primary/80 hover:underline focus:outline-none disabled:opacity-50"
+            >
+              + Ajouter un tiers à informer (optionnel)
+            </button>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Tiers à informer</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Ce tiers recevra une copie de la confirmation, du rappel et de l&apos;annulation. Un seul des deux champs suffit.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleTiers}
+                  disabled={isSubmitting}
+                  className="text-xs text-muted-foreground hover:text-foreground focus:outline-none disabled:opacity-50"
+                >
+                  Retirer
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="tiers-email" className="text-xs font-medium text-muted-foreground">
+                    Email du tiers
+                  </label>
+                  <Input
+                    id="tiers-email"
+                    type="email"
+                    value={tiersEmail}
+                    onChange={(e) => setTiersEmail(e.target.value)}
+                    placeholder="ex : enfant.client@gmail.com"
+                    maxLength={100}
+                    className="mt-1"
+                    disabled={isSubmitting}
+                  />
+                  {fieldErrors.tiers_email && (
+                    <p className="mt-1 text-xs text-destructive">{fieldErrors.tiers_email[0]}</p>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="tiers-telephone" className="text-xs font-medium text-muted-foreground">
+                    Téléphone du tiers
+                  </label>
+                  <Input
+                    id="tiers-telephone"
+                    type="tel"
+                    value={tiersTelephone}
+                    onChange={(e) => setTiersTelephone(e.target.value)}
+                    placeholder="ex : 06 12 34 56 78"
+                    className="mt-1"
+                    disabled={isSubmitting}
+                  />
+                  {fieldErrors.tiers_telephone && (
+                    <p className="mt-1 text-xs text-destructive">{fieldErrors.tiers_telephone[0]}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <label className="flex cursor-pointer items-start gap-3 rounded-md border border-border bg-muted/20 p-3">
