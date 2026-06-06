@@ -14,6 +14,14 @@ import { createEvent } from "@/lib/google/calendar";
 import { envoyerEmailConfirmationClient } from "@/lib/brevo/emails";
 import { startOfDay } from "date-fns";
 
+const SERVICE_ENTRETIEN_BALLON_ID = '18cc2ca6-0183-43c0-a170-51a10abcadf4';
+const VILLES_LILLE_BALLON_IDS = [
+  '4aeec05d-9361-41c2-ac77-7ed677df6498', // Lille (59000)
+  '1961b8b8-d823-4136-9f6f-7dc5f3a92586', // Euralille (59777)
+  'bdd8c4b2-362c-43f0-8a22-8eb5f210a002', // Lille centre (59800)
+];
+const DUREE_BALLON_LILLE_MIN = 30;
+
 export type CreneauAdmin = {
   debut: string;
   fin: string;
@@ -74,7 +82,18 @@ export async function getCreneauxDisponiblesAdmin(params: {
     dureeMinutes = dureeManuelle;
   } else if (serviceRes.data) {
     const dureeService = serviceRes.data.duree_minutes;
-    dureeMinutes = prixCentimes === 10100 ? 120 : dureeService;
+    // TODO dette technique : règles métier en dur (cf. mémoire projet)
+    // Duplique app/rdv/actions.ts::dureeCreneauMinutes
+    if (prixCentimes === 10100) {
+      dureeMinutes = 120;
+    } else if (
+      serviceId === SERVICE_ENTRETIEN_BALLON_ID &&
+      VILLES_LILLE_BALLON_IDS.includes(villeId)
+    ) {
+      dureeMinutes = DUREE_BALLON_LILLE_MIN;
+    } else {
+      dureeMinutes = dureeService;
+    }
   } else {
     return [];
   }

@@ -26,6 +26,14 @@ type Service = Database["public"]["Tables"]["rdv_services"]["Row"];
 type Ville = Database["public"]["Tables"]["rdv_villes"]["Row"];
 type Marque = Database["public"]["Tables"]["rdv_marques_chaudiere"]["Row"];
 
+const SERVICE_ENTRETIEN_BALLON_ID = '18cc2ca6-0183-43c0-a170-51a10abcadf4';
+const VILLES_LILLE_BALLON_IDS = [
+  '4aeec05d-9361-41c2-ac77-7ed677df6498', // Lille (59000)
+  '1961b8b8-d823-4136-9f6f-7dc5f3a92586', // Euralille (59777)
+  'bdd8c4b2-362c-43f0-8a22-8eb5f210a002', // Lille centre (59800)
+];
+const DUREE_BALLON_LILLE_MIN = 30;
+
 /**
  * Récupère tous les services actifs, triés par ordre.
  */
@@ -177,10 +185,24 @@ export async function getTarifByVilleId(
   return tarif?.prix_centimes ?? null;
 }
 
-/** Durée d'un créneau en minutes selon la règle métier (101 € → 2h). */
+/** Durée d'un créneau en minutes selon la règle métier (101 € → 2h, ballon Lille → 30 min). */
 const DUREE_ENTRETIEN_101_MIN = 120;
-function dureeCreneauMinutes(dureeServiceParDefaut: number, prixCentimes: number | null): number {
+function dureeCreneauMinutes(
+  dureeServiceParDefaut: number,
+  prixCentimes: number | null,
+  serviceId: string | null,
+  villeId: string | null
+): number {
+  // TODO dette technique : ces règles métier en dur seront à factoriser un jour
+  // (cf. mémoire projet) - duplique aussi dans app/admin/(protected)/rdv/nouveau/actions.ts
   if (prixCentimes === 10100) return DUREE_ENTRETIEN_101_MIN;
+  if (
+    serviceId === SERVICE_ENTRETIEN_BALLON_ID &&
+    villeId !== null &&
+    VILLES_LILLE_BALLON_IDS.includes(villeId)
+  ) {
+    return DUREE_BALLON_LILLE_MIN;
+  }
   return dureeServiceParDefaut;
 }
 
@@ -261,7 +283,12 @@ export async function getCreneauxDisponibles(params: {
   ]);
 
   if (!serviceRes.data) return [];
-  const dureeMinutes = dureeCreneauMinutes(serviceRes.data.duree_minutes, prixCentimes);
+  const dureeMinutes = dureeCreneauMinutes(
+    serviceRes.data.duree_minutes,
+    prixCentimes,
+    serviceId,
+    villeId
+  );
 
   const delaiMin = parseInt(parametres["delai_minimum_jours"] ?? "1", 10);
   const joursVisibles = parseInt(parametres["jours_visibles_futur"] ?? "30", 10);
