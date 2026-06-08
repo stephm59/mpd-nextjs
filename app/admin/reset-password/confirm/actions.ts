@@ -26,6 +26,12 @@ export async function updatePasswordAction(formData: FormData) {
 
   if (error) {
     console.error("[updatePasswordAction] Erreur Supabase Auth:", error.message);
+
+    // Cas spécifique : Supabase refuse si le nouveau password est identique à l'ancien
+    if (error.message.toLowerCase().includes("should be different")) {
+      redirect("/admin/reset-password/confirm?error=password_same");
+    }
+
     redirect("/admin/reset-password/confirm?error=update_failed");
   }
 

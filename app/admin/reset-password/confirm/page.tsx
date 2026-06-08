@@ -13,7 +13,9 @@ export default async function ConfirmResetPage({ searchParams }: PageProps) {
         ? "Le mot de passe doit faire au moins 8 caractères."
         : params.error === "passwords_mismatch"
           ? "Les deux mots de passe ne correspondent pas."
-          : params.error === "update_failed"
+          : params.error === "password_same"
+            ? "Ce mot de passe est identique à l'ancien. Choisissez un nouveau mot de passe."
+            : params.error === "update_failed"
             ? "La mise à jour a échoué. Le lien est peut-être expiré, réessayez."
             : "Erreur lors de la mise à jour."
     : null;

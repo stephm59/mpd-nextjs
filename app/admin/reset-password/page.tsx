@@ -10,7 +10,9 @@ export default async function ResetPasswordPage({ searchParams }: PageProps) {
   const isSent = params.sent === "1";
   const errorMessage = params.error === "missing_email"
     ? "Veuillez renseigner votre email."
-    : null;
+    : params.error === "link_expired"
+      ? "Le lien a expiré ou a déjà été utilisé. Demandez un nouveau lien ci-dessous."
+      : null;
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
