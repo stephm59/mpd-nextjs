@@ -15,7 +15,7 @@ export async function requestPasswordResetAction(formData: FormData) {
   const host = headersList.get("host") ?? "localhost:3000";
   const protocol = host.startsWith("localhost") ? "http" : "https";
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? `${protocol}://${host}`;
-  const redirectTo = `${baseUrl}/admin/reset-password/confirm`;
+  const redirectTo = `${baseUrl}/auth/confirm?next=/admin/reset-password/confirm`;
 
   const supabase = await createSupabaseAuthClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email as string, {

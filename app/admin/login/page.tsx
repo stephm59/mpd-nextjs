@@ -24,7 +24,9 @@ export default async function LoginPage({
       ? "Veuillez remplir l'email et le mot de passe."
       : params.error === "invalid_credentials"
         ? "Email ou mot de passe incorrect."
-        : "Erreur de connexion."
+        : params.error === "invalid_link"
+          ? "Le lien est invalide ou a expiré. Demandez un nouveau lien."
+          : "Erreur de connexion."
     : null;
 
   return (
