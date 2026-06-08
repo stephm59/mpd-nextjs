@@ -1,28 +1,32 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createAdminSession, destroyAdminSession } from "@/lib/admin/session";
+import { createSupabaseAuthClient } from "@/lib/supabase/auth";
 
 export async function loginAction(formData: FormData) {
+  const email = formData.get("email");
   const password = formData.get("password");
 
-  if (typeof password !== "string" || !password) {
-    redirect("/admin/login?error=1");
+  if (typeof email !== "string" || !email || typeof password !== "string" || !password) {
+    redirect("/admin/login?error=missing_fields");
   }
 
-  if (!process.env.ADMIN_PASSWORD) {
-    throw new Error("ADMIN_PASSWORD is not defined");
+  const supabase = await createSupabaseAuthClient();
+  const { error } = await supabase.auth.signInWithPassword({
+    email: email as string,
+    password: password as string,
+  });
+
+  if (error) {
+    console.error("[loginAction] Erreur Supabase Auth:", error.message);
+    redirect("/admin/login?error=invalid_credentials");
   }
 
-  if (password !== process.env.ADMIN_PASSWORD) {
-    redirect("/admin/login?error=1");
-  }
-
-  await createAdminSession();
   redirect("/admin");
 }
 
 export async function logoutAction() {
-  await destroyAdminSession();
+  const supabase = await createSupabaseAuthClient();
+  await supabase.auth.signOut();
   redirect("/admin/login");
 }

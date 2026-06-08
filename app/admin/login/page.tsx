@@ -18,7 +18,13 @@ export default async function LoginPage({
   }
 
   const params = await searchParams;
-  const hasError = params.error === "1";
+  const errorMessage = params.error
+    ? params.error === "missing_fields"
+      ? "Veuillez remplir l'email et le mot de passe."
+      : params.error === "invalid_credentials"
+        ? "Email ou mot de passe incorrect."
+        : "Erreur de connexion."
+    : null;
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
@@ -28,6 +34,20 @@ export default async function LoginPage({
 
         <form action={loginAction} className="space-y-4">
           <div>
+            <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              autoFocus
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
             <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
               Mot de passe
             </label>
@@ -36,13 +56,12 @@ export default async function LoginPage({
               id="password"
               name="password"
               required
-              autoFocus
               className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          {hasError && (
-            <p className="text-sm text-red-600">Mot de passe incorrect</p>
+          {errorMessage && (
+            <p className="text-sm text-red-600">{errorMessage}</p>
           )}
 
           <button
