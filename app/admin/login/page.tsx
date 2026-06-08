@@ -1,6 +1,7 @@
 import { loginAction } from "./actions";
 import { isAdminAuthenticated } from "@/lib/admin/session";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -71,6 +72,13 @@ export default async function LoginPage({
             Se connecter
           </button>
         </form>
+
+        <Link
+          href="/admin/reset-password"
+          className="block text-center text-sm text-slate-600 hover:underline pt-4"
+        >
+          Mot de passe oublié ?
+        </Link>
       </div>
     </main>
   );
