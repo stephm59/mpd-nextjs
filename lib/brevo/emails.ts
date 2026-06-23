@@ -28,6 +28,8 @@ import {
 
 const EQUIPE_EMAIL = process.env.EMAIL_EQUIPE ?? "contact@monptitdepanneur.fr";
 const EQUIPE_NAME = process.env.EMAIL_EQUIPE_NAME ?? "Mon p'tit Dépanneur";
+const REPLY_TO_EMAIL = process.env.EMAIL_REPLY_TO ?? "monptitdepanneur@gmail.com";
+const REPLY_TO_NAME = "Mon p'tit Dépanneur";
 
 export interface EnvoyerEmailResult {
   success: boolean;
@@ -49,6 +51,7 @@ export async function envoyerEmailConfirmationClient(
 
     const result = await brevoClient.transactionalEmails.sendTransacEmail({
       sender: BREVO_SENDER,
+      replyTo: { email: REPLY_TO_EMAIL, name: REPLY_TO_NAME },
       to: [{
         email: destinataire.email,
         name: `${destinataire.prenom} ${destinataire.nom}`,
@@ -90,6 +93,7 @@ export async function envoyerEmailAnnulationClient(
 
     const result = await brevoClient.transactionalEmails.sendTransacEmail({
       sender: BREVO_SENDER,
+      replyTo: { email: REPLY_TO_EMAIL, name: REPLY_TO_NAME },
       to: [{
         email: data.client_email,
         name: `${data.client_prenom} ${data.client_nom}`,
@@ -218,6 +222,7 @@ export async function envoyerEmailRappelJ1(
 
     const result = await brevoClient.transactionalEmails.sendTransacEmail({
       sender: BREVO_SENDER,
+      replyTo: { email: REPLY_TO_EMAIL, name: REPLY_TO_NAME },
       to: [{
         email: destinataire.email,
         name: `${destinataire.prenom} ${destinataire.nom}`,
@@ -294,6 +299,7 @@ export async function envoyerEmailAvisPostRdv(
 
     const result = await brevoClient.transactionalEmails.sendTransacEmail({
       sender: BREVO_SENDER,
+      replyTo: { email: REPLY_TO_EMAIL, name: REPLY_TO_NAME },
       to: [{ email: data.client_email, name: data.client_prenom }],
       subject,
       htmlContent: html,
