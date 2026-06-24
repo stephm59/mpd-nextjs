@@ -10,6 +10,7 @@ import {
   genererCreneauxJour,
 } from "@/lib/rdv/dates";
 import { reservationSchema, type ReservationInput } from "@/lib/rdv/schema";
+import { formatMontantPourGoogleCalendar } from "@/lib/rdv/format";
 import { annulationSchema } from "@/lib/rdv/schema-annulation";
 import { createEvent, deleteEvent } from "@/lib/google/calendar";
 import { getTechniciensBusy, isTechAvailable } from "@/lib/google/availability";
@@ -479,6 +480,7 @@ export async function creerReservation(
           `Référence : ${reference}`,
           `Téléphone : ${data.client_telephone}`,
           `Email : ${data.client_email}`,
+          formatMontantPourGoogleCalendar(data.prix_centimes, null),
           data.client_complement ? `Complément : ${data.client_complement}` : "",
           data.notes ? `\nNotes :\n${data.notes}` : "",
         ].filter(Boolean).join("\n"),

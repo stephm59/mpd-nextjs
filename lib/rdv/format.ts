@@ -26,3 +26,31 @@ export function formatDuration(minutes: number): string {
   if (m === 0) return `${h}h`;
   return `${h}h${m.toString().padStart(2, "0")}`;
 }
+
+/**
+ * Formate le montant à recevoir pour la description Google Calendar.
+ * Gère les 3 cas : prix libre (mode perso admin), prix standard (tunnel/admin standard), inconnu.
+ *
+ * Exemples :
+ *   formatMontantPourGoogleCalendar(9100, null) → "Montant à recevoir : 91,00 € (chèque ou espèces)"
+ *   formatMontantPourGoogleCalendar(null, "Devis") → "Montant à recevoir : Devis (chèque ou espèces)"
+ *   formatMontantPourGoogleCalendar(null, null) → "Montant à recevoir : à définir"
+ */
+export function formatMontantPourGoogleCalendar(
+  prixCentimes: number | null | undefined,
+  prixLibre: string | null | undefined
+): string {
+  if (prixLibre && prixLibre.trim()) {
+    return `Montant à recevoir : ${prixLibre.trim()} (chèque ou espèces)`;
+  }
+  if (prixCentimes && prixCentimes > 0) {
+    const montantFormate = new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "EUR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(prixCentimes / 100);
+    return `Montant à recevoir : ${montantFormate} (chèque ou espèces)`;
+  }
+  return `Montant à recevoir : à définir`;
+}

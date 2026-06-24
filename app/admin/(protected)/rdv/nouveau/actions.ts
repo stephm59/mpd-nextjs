@@ -9,6 +9,7 @@ import {
   genererCreneauxJour,
 } from "@/lib/rdv/dates";
 import { getParametres, getTarifByVilleId } from "@/app/rdv/actions";
+import { formatMontantPourGoogleCalendar } from "@/lib/rdv/format";
 import { getTechniciensBusy, isTechAvailable } from "@/lib/google/availability";
 import { createEvent } from "@/lib/google/calendar";
 import { envoyerEmailConfirmationClient } from "@/lib/brevo/emails";
@@ -239,6 +240,7 @@ export async function creerReservationAdmin(
           `Référence : ${reference}`,
           `Téléphone : ${data.client_telephone}`,
           `Email : ${data.client_email}`,
+          formatMontantPourGoogleCalendar(data.prix_centimes, data.prix_libre),
           data.client_complement ? `Complément : ${data.client_complement}` : "",
           data.description_intervention ? `\nDétails :\n${data.description_intervention}` : "",
           data.notes ? `\nNotes :\n${data.notes}` : "",
