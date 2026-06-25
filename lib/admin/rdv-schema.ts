@@ -8,8 +8,8 @@ export const reservationAdminSchema = z.object({
 
   // Mode perso : ces champs présents (et service_id null)
   service_nom_personnalise: z.string().trim().min(2).max(100).nullable(),
-  duree_personnalisee_minutes: z.number().int().refine((v) => [60, 120, 180, 240].includes(v), {
-    message: "Durée invalide (60, 120, 180 ou 240 minutes attendues)",
+  duree_personnalisee_minutes: z.number().int().refine((v) => [60, 120, 180, 240, 540].includes(v), {
+    message: "Durée invalide (60, 120, 180, 240 minutes ou 540 pour journée entière attendues)",
   }).nullable(),
   description_intervention: z.string().trim().max(1000).nullable(),
   prix_libre: z.string().trim().max(100).nullable(),

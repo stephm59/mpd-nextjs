@@ -317,11 +317,12 @@ function EtapePersonnalise({
     { value: 120, label: "2h" },
     { value: 180, label: "3h" },
     { value: 240, label: "4h" },
+    { value: 540, label: "Journée entière" },
   ];
 
   const isValid =
     nom.trim().length >= 2 &&
-    [60, 120, 180, 240].includes(dureeMinutes) &&
+    [60, 120, 180, 240, 540].includes(dureeMinutes) &&
     prixLibre.trim().length > 0;
 
   function handleContinue() {
@@ -370,7 +371,7 @@ function EtapePersonnalise({
           <label className="text-sm font-medium text-foreground">
             Durée prévue <span className="text-destructive">*</span>
           </label>
-          <div className="mt-1.5 grid grid-cols-4 gap-2">
+          <div className="mt-1.5 grid grid-cols-5 gap-2">
             {dureeOptions.map((opt) => (
               <button
                 key={opt.value}

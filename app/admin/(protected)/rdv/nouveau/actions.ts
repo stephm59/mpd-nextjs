@@ -119,31 +119,67 @@ export async function getCreneauxDisponiblesAdmin(params: {
   const techsBusy = await getTechniciensBusy(techIds, datePremier, dateDernier);
   const busyByTech = new Map(techsBusy.map((t) => [t.technicienId, t.busySlots]));
 
+  // Convention : 540 minutes = "journée entière" 8h-17h (cas spécial)
+  const DUREE_JOURNEE_ENTIERE_MIN = 540;
+
   const creneaux: CreneauAdmin[] = [];
   let jour = new Date(datePremier);
 
   while (jour <= dateDernier) {
     const nomJour = getJourSemaine(jour);
     if (joursOuvres.includes(nomJour)) {
-      const plages = nomJour === "vendredi" ? horairesVendredi : horairesLundiJeudi;
-      const creneauxJour = genererCreneauxJour(jour, plages, dureeMinutes);
 
-      for (const c of creneauxJour) {
-        // Exclure les créneaux passés (utile pour aujourd'hui)
-        if (c.debut < maintenant) continue;
+      if (dureeMinutes === DUREE_JOURNEE_ENTIERE_MIN) {
+        // Cas spécial : journée entière 8h-17h en continu, tous les jours ouvrés
+        // (y compris vendredi qui ferme normalement à 16h). Proposée uniquement
+        // si le technicien est totalement libre ce jour-là.
+        // Réutilise genererCreneauxJour avec plage "08:00-17:00" et durée 540min
+        // pour garantir le bon fuseau Europe/Paris (cf. fromZonedTime en interne).
+        const creneauxJournee = genererCreneauxJour(
+          jour,
+          ["08:00-17:00"],
+          DUREE_JOURNEE_ENTIERE_MIN
+        );
 
-        const techsLibres = techsDispos.filter((tech) => {
-          const busySlots = busyByTech.get(tech.id);
-          if (!busySlots) return true;
-          return isTechAvailable(busySlots, c.debut, c.fin);
-        });
+        for (const c of creneauxJournee) {
+          if (c.debut < maintenant) continue;
 
-        if (techsLibres.length > 0) {
-          creneaux.push({
-            debut: c.debut.toISOString(),
-            fin: c.fin.toISOString(),
-            techniciens_libres: techsLibres.map((t) => ({ id: t.id, prenom: t.prenom })),
+          const techsLibres = techsDispos.filter((tech) => {
+            const busySlots = busyByTech.get(tech.id);
+            if (!busySlots) return true;
+            return isTechAvailable(busySlots, c.debut, c.fin);
           });
+
+          if (techsLibres.length > 0) {
+            creneaux.push({
+              debut: c.debut.toISOString(),
+              fin: c.fin.toISOString(),
+              techniciens_libres: techsLibres.map((t) => ({ id: t.id, prenom: t.prenom })),
+            });
+          }
+        }
+      } else {
+        // Cas normal : créneaux 1h/2h/3h/4h dans les plages horaires définies
+        const plages = nomJour === "vendredi" ? horairesVendredi : horairesLundiJeudi;
+        const creneauxJour = genererCreneauxJour(jour, plages, dureeMinutes);
+
+        for (const c of creneauxJour) {
+          // Exclure les créneaux passés (utile pour aujourd'hui)
+          if (c.debut < maintenant) continue;
+
+          const techsLibres = techsDispos.filter((tech) => {
+            const busySlots = busyByTech.get(tech.id);
+            if (!busySlots) return true;
+            return isTechAvailable(busySlots, c.debut, c.fin);
+          });
+
+          if (techsLibres.length > 0) {
+            creneaux.push({
+              debut: c.debut.toISOString(),
+              fin: c.fin.toISOString(),
+              techniciens_libres: techsLibres.map((t) => ({ id: t.id, prenom: t.prenom })),
+            });
+          }
         }
       }
     }
