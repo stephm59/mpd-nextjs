@@ -73,12 +73,16 @@ export function genererCreneauxJour(
       TZ
     );
 
+    // Pas de progression : 60min par défaut, ou dureeMinutes si plus court
+    // (ex : ballon 30min garde son pas 30min ; 2h/3h/4h passent à un pas 1h)
+    const pasMinutes = Math.min(dureeMinutes, 60);
+
     let cursor = new Date(plageDebut);
     while (true) {
       const finCreneau = addMinutes(cursor, dureeMinutes);
       if (finCreneau > plageFin) break;
       creneaux.push({ debut: new Date(cursor), fin: finCreneau });
-      cursor = finCreneau;
+      cursor = addMinutes(cursor, pasMinutes);
     }
   }
 
