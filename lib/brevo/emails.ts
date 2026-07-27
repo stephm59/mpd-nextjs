@@ -266,6 +266,9 @@ export async function envoyerEmailContactEquipe(
       replyTo: { email: data.email, name: `${data.firstName} ${data.lastName}` },
       subject,
       htmlContent: html,
+      ...(data.photos && data.photos.length > 0
+        ? { attachment: data.photos.map((p) => ({ name: p.name, content: p.base64 })) }
+        : {}),
     });
 
     console.log(

@@ -13,6 +13,24 @@ const contactSchema = z.object({
   consentement: z.literal(true, {
     message: "Vous devez accepter pour continuer",
   }),
+  photos: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(200),
+        base64: z
+          .string()
+          .min(1)
+          .refine(
+            (b64) => {
+              // 2 Mo binaire = ~2.74 Mo base64. Limite stricte : 3 Mo pour marge
+              return b64.length <= 3 * 1024 * 1024;
+            },
+            { message: "Photo trop volumineuse (max 2 Mo)" }
+          ),
+      })
+    )
+    .max(1, "Une seule photo autorisée")
+    .optional(),
 });
 
 export type ContactInput = z.infer<typeof contactSchema>;
@@ -30,7 +48,10 @@ export async function envoyerContactAction(input: ContactInput): Promise<Contact
     };
   }
 
-  const result = await envoyerEmailContactEquipe(parsed.data);
+  const result = await envoyerEmailContactEquipe({
+    ...parsed.data,
+    photos: parsed.data.photos ?? [],
+  });
 
   if (!result.success) {
     console.error("[envoyerContactAction] Échec envoi:", result.error);

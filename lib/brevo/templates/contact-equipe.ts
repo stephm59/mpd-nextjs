@@ -6,6 +6,7 @@ export interface ContactEquipeData {
   email: string;
   phone: string;
   message: string;
+  photos?: Array<{ name: string; base64: string }>;
 }
 
 function escapeHtml(text: string): string {
@@ -62,6 +63,13 @@ export function genererEmailContactEquipe(data: ContactEquipeData): {
         Message
       </h2>
       <p style="margin: 0; font-size: 14px; color: #334155; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(data.message)}</p>
+      ${
+        data.photos && data.photos.length > 0
+          ? `<p style="margin: 16px 0 0; font-size: 14px; color: #059669;">
+         📎 1 photo jointe à cet email.
+       </p>`
+          : ""
+      }
     </div>
 
     <p style="margin: 20px 0 0; font-size: 12px; color: #94a3b8; text-align: center;">

@@ -21,9 +21,32 @@ const schema = z.object({
   consentement: z.literal(true, {
     message: 'Vous devez accepter pour continuer',
   }),
+  photos: z
+    .array(
+      z.object({
+        name: z.string(),
+        base64: z.string(), // Data URL sans le préfixe "data:image/...;base64,"
+      })
+    )
+    .max(1)
+    .optional(),
 })
 
 type FormData = z.infer<typeof schema>
+
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      // Résultat = "data:image/jpeg;base64,XXX" → on garde uniquement la partie base64
+      const base64 = result.split(',')[1] ?? ''
+      resolve(base64)
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
 
 interface ContactFormProps {
   isOpen?: boolean
@@ -46,6 +69,10 @@ export default function ContactForm({
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [isPending, startTransition] = useTransition()
   const formRef = useRef<HTMLFormElement>(null)
+  const [photo, setPhoto] = useState<{ name: string; base64: string; preview: string } | null>(null)
+  const [photoError, setPhotoError] = useState<string>('')
+  const [convertingHeic, setConvertingHeic] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const {
     register,
@@ -61,16 +88,95 @@ export default function ContactForm({
 
   const consentement = watch('consentement')
 
+  async function convertHeicToJpeg(file: File): Promise<File> {
+    setConvertingHeic(true)
+    try {
+      const heic2any = (await import('heic2any')).default
+      const converted = await heic2any({
+        blob: file,
+        toType: 'image/jpeg',
+        quality: 0.9,
+      })
+      const blob = Array.isArray(converted) ? converted[0] : converted
+      return new File([blob], file.name.replace(/\.heic$/i, '.jpg'), { type: 'image/jpeg' })
+    } finally {
+      setConvertingHeic(false)
+    }
+  }
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    // Une seule photo autorisée : on ne traite que le premier fichier
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoError('')
+
+    const MAX_SIZE = 2 * 1024 * 1024 // 2 Mo (marge Vercel Functions ~4.5 Mo)
+    let fileToProcess = file
+
+    // Convertir HEIC → JPEG si nécessaire
+    const isHeic =
+      file.type === 'image/heic' || file.type === 'image/heif' || /\.(heic|heif)$/i.test(file.name)
+    if (isHeic) {
+      try {
+        fileToProcess = await convertHeicToJpeg(file)
+      } catch (err) {
+        console.error('[handlePhotoChange] Erreur conversion HEIC:', err)
+        setPhotoError(
+          `Impossible de convertir la photo ${file.name}. Prenez une nouvelle photo en JPEG.`
+        )
+        if (fileInputRef.current) fileInputRef.current.value = ''
+        return
+      }
+    }
+
+    // Vérifier la taille (après conversion si HEIC)
+    if (fileToProcess.size > MAX_SIZE) {
+      setPhotoError('La photo dépasse 2 Mo. Réduisez sa taille.')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
+    // Vérifier le type MIME final
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(fileToProcess.type)) {
+      setPhotoError(`Format non supporté (${fileToProcess.type}). Utilisez JPEG, PNG ou WEBP.`)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
+    const base64 = await fileToBase64(fileToProcess)
+    const preview = URL.createObjectURL(fileToProcess)
+
+    // Remplace la photo existante le cas échéant
+    setPhoto((prev) => {
+      if (prev) URL.revokeObjectURL(prev.preview)
+      return { name: fileToProcess.name, base64, preview }
+    })
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  function handleRemovePhoto() {
+    setPhoto((prev) => {
+      if (prev) URL.revokeObjectURL(prev.preview)
+      return null
+    })
+    setPhotoError('')
+  }
+
   const onSubmit = async (data: FormData) => {
     setStatus('sending')
     setErrorMessage('')
 
     startTransition(async () => {
-      const result = await envoyerContactAction(data)
+      const result = await envoyerContactAction({
+        ...data,
+        photos: photo ? [{ name: photo.name, base64: photo.base64 }] : [],
+      })
 
       if (result.success) {
         setStatus('success')
         reset()
+        setPhoto(null)
         setTimeout(() => {
           setStatus('idle')
           onClose?.()
@@ -142,6 +248,53 @@ export default function ContactForm({
         <Label htmlFor="message">Message</Label>
         <Textarea id="message" {...register('message')} rows={4} placeholder="Décrivez votre problème ou votre demande..." disabled={isLoading} />
         {errors.message && <p className="text-destructive text-xs">{errors.message.message}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label>Photo (optionnel)</Label>
+        <p className="text-xs text-muted-foreground">
+          Une photo peut nous aider à mieux comprendre votre demande. Max 2 Mo.
+        </p>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
+          onChange={handlePhotoChange}
+          disabled={isLoading || convertingHeic}
+          className="hidden"
+          id="photos-input"
+        />
+
+        {photo === null && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isLoading || convertingHeic}
+          >
+            {convertingHeic ? 'Conversion HEIC en cours...' : 'Ajouter une photo'}
+          </Button>
+        )}
+
+        {photo !== null && (
+          <div className="relative aspect-square w-32 rounded-lg overflow-hidden border border-border mt-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photo.preview} alt={photo.name} className="w-full h-full object-cover" />
+            <button
+              type="button"
+              onClick={handleRemovePhoto}
+              disabled={isLoading}
+              className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 text-white p-1 rounded-full transition-colors"
+              aria-label={`Supprimer la photo ${photo.name}`}
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+
+        {photoError && <p className="text-destructive text-xs">{photoError}</p>}
       </div>
 
       <ConsentementCheckbox
