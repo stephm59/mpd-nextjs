@@ -189,6 +189,19 @@ export default async function AnnulerPage({ params }: { params: Params }) {
         </CardContent>
       </Card>
 
+      <div className="rounded-md border border-primary/20 bg-primary/5 p-4 mb-6">
+        <p className="text-sm font-medium text-foreground">
+          Vous préférez simplement décaler ?
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Gardez votre rendez-vous et choisissez un autre créneau, sans repasser par la
+          réservation.
+        </p>
+        <Button variant="outline" size="sm" className="mt-3" asChild>
+          <Link href={`/rdv/deplacer/${token}`}>Déplacer mon rendez-vous</Link>
+        </Button>
+      </div>
+
       <div className="rounded-md border border-amber-200 bg-amber-50 p-4 mb-6 text-sm text-amber-900">
         <p>
           <strong>Attention :</strong> cette action est définitive. Le créneau sera libéré et un email de confirmation d&apos;annulation vous sera envoyé.

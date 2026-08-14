@@ -362,7 +362,10 @@ export type Database = {
           client_telephone: string
           created_at: string
           creneau_debut: string
+          creneau_debut_initial: string | null
           creneau_fin: string
+          deplace_at: string | null
+          deplace_par: string | null
           description_intervention: string | null
           duree_personnalisee_minutes: number | null
           google_event_calendar_id: string | null
@@ -371,6 +374,7 @@ export type Database = {
           id: string
           ip_address: unknown
           marque_id: string | null
+          nb_deplacements_client: number
           notes: string | null
           prix_centimes: number
           prix_libre: string | null
@@ -397,7 +401,10 @@ export type Database = {
           client_telephone: string
           created_at?: string
           creneau_debut: string
+          creneau_debut_initial?: string | null
           creneau_fin: string
+          deplace_at?: string | null
+          deplace_par?: string | null
           description_intervention?: string | null
           duree_personnalisee_minutes?: number | null
           google_event_calendar_id?: string | null
@@ -406,6 +413,7 @@ export type Database = {
           id?: string
           ip_address?: unknown
           marque_id?: string | null
+          nb_deplacements_client?: number
           notes?: string | null
           prix_centimes?: number
           prix_libre?: string | null
@@ -432,7 +440,10 @@ export type Database = {
           client_telephone?: string
           created_at?: string
           creneau_debut?: string
+          creneau_debut_initial?: string | null
           creneau_fin?: string
+          deplace_at?: string | null
+          deplace_par?: string | null
           description_intervention?: string | null
           duree_personnalisee_minutes?: number | null
           google_event_calendar_id?: string | null
@@ -441,6 +452,7 @@ export type Database = {
           id?: string
           ip_address?: unknown
           marque_id?: string | null
+          nb_deplacements_client?: number
           notes?: string | null
           prix_centimes?: number
           prix_libre?: string | null

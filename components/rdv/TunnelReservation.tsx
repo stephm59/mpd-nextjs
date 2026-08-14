@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ConsentementCheckbox } from "@/components/ui/ConsentementCheckbox";
 import { ChevronRight, ArrowLeft, MapPin, Phone, Flame, Sparkles } from "lucide-react";
 import { formatDuration, formatPrice } from "@/lib/rdv/format";
-import { formatJourLong } from "@/lib/rdv/dates";
+import { formatJourLong, parseDatePlancher } from "@/lib/rdv/dates";
 import type { CreneauDisponible, Service } from "@/app/rdv/actions";
 import {
   getTarifByVilleId,
@@ -469,6 +469,7 @@ function Etape4ChoixDateCreneau({
     delaiMinimumJours: number;
     joursVisiblesFutur: number;
     joursOuvres: string[];
+    datePlancher: string | null;
   } | null>(null);
   const [creneauxParJour, setCreneauxParJour] = React.useState<Map<string, CreneauDisponible[]> | null>(null);
   const [techniciens, setTechniciens] = React.useState<Array<{ id: string; prenom: string }>>([]);
@@ -482,6 +483,7 @@ function Etape4ChoixDateCreneau({
         joursVisiblesFutur: parseInt(params["jours_visibles_futur"] ?? "30", 10),
         joursOuvres: (params["jours_ouvres"] ?? "lundi,mardi,mercredi,jeudi,vendredi")
           .split(",").map(s => s.trim().toLowerCase()),
+        datePlancher: params["date_premiere_reservation"] ?? null,
       });
     });
   }, []);
@@ -535,8 +537,14 @@ function Etape4ChoixDateCreneau({
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const dateMin = new Date(today);
-  dateMin.setDate(dateMin.getDate() + parametres.delaiMinimumJours);
+  const dateParDelai = new Date(today);
+  dateParDelai.setDate(dateParDelai.getDate() + parametres.delaiMinimumJours);
+
+  // Même règle que le serveur : max(aujourd'hui + délai, date plancher).
+  // Sans ça le calendrier s'ouvrirait sur un mois entièrement grisé.
+  const plancher = parseDatePlancher(parametres.datePlancher);
+  const plancherActif = plancher !== null && plancher > dateParDelai;
+  const dateMin = plancherActif ? plancher! : dateParDelai;
   const dateMax = new Date(dateMin);
   dateMax.setDate(dateMax.getDate() + parametres.joursVisiblesFutur);
 
@@ -581,6 +589,21 @@ function Etape4ChoixDateCreneau({
         {service.nom} · {ville.nom} ({ville.code_postal})
         {marque && ` · ${marque.nom}`}
       </p>
+
+      {plancherActif && (
+        <div className="mt-4 rounded-md border border-primary/20 bg-primary/5 p-3">
+          <p className="text-sm font-medium text-foreground">
+            Prochaines disponibilités à partir du {formatJourLong(dateMin)} {dateMin.getFullYear()}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Nous avons beaucoup de demandes en ce moment. Pour une urgence, appelez-nous au{" "}
+            <a href="tel:+33328534868" className="font-semibold text-primary hover:underline">
+              03 28 53 48 68
+            </a>
+            .
+          </p>
+        </div>
+      )}
 
       <div className="mt-4 rounded-md border border-border bg-muted/30 p-3">
         <div className="flex items-center justify-between gap-3">
@@ -635,6 +658,7 @@ function Etape4ChoixDateCreneau({
             selected={selectedDate ?? undefined}
             onSelect={(date) => date && setSelectedDate(date)}
             disabled={disabledDays}
+            defaultMonth={selectedDate ?? dateMin}
             fromDate={dateMin}
             toDate={dateMax}
             className="rounded-md border border-border"

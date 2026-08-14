@@ -25,6 +25,11 @@ import {
   genererEmailAvisPostRdv,
   type AvisPostRdvData,
 } from "./templates/avis-post-rdv";
+import {
+  genererEmailDeplacementClient,
+  type DeplacementData,
+} from "./templates/deplacement-client";
+import { genererEmailDeplacementEquipe } from "./templates/deplacement-equipe";
 
 const EQUIPE_EMAIL = process.env.EMAIL_EQUIPE ?? "contact@monptitdepanneur.fr";
 const EQUIPE_NAME = process.env.EMAIL_EQUIPE_NAME ?? "Mon p'tit Dépanneur";
@@ -119,6 +124,71 @@ export async function envoyerEmailAnnulationClient(
       success: false,
       error: message,
     };
+  }
+}
+
+/**
+ * Envoie au client la confirmation de déplacement de son RDV (ancien → nouveau créneau).
+ */
+export async function envoyerEmailDeplacementClient(
+  data: DeplacementData,
+  cc?: string[]
+): Promise<EnvoyerEmailResult> {
+  try {
+    const { subject, html } = genererEmailDeplacementClient(data);
+
+    const result = await brevoClient.transactionalEmails.sendTransacEmail({
+      sender: BREVO_SENDER,
+      replyTo: { email: REPLY_TO_EMAIL, name: REPLY_TO_NAME },
+      to: [{
+        email: data.client_email,
+        name: `${data.client_prenom} ${data.client_nom}`,
+      }],
+      ...(cc && cc.length > 0 ? { cc: cc.map((email) => ({ email })) } : {}),
+      subject,
+      htmlContent: html,
+    });
+
+    console.log(
+      "[envoyerEmailDeplacementClient] Email envoyé:",
+      result.messageId ?? "(no messageId)"
+    );
+
+    return { success: true, messageId: result.messageId ?? undefined };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[envoyerEmailDeplacementClient] Erreur:", message);
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Prévient l'équipe (et le technicien concerné) qu'un RDV a été déplacé.
+ */
+export async function envoyerEmailDeplacementEquipe(
+  data: DeplacementData,
+  techEmail: string | null
+): Promise<EnvoyerEmailResult> {
+  try {
+    const { subject, html } = genererEmailDeplacementEquipe(data);
+
+    const result = await brevoClient.transactionalEmails.sendTransacEmail({
+      sender: BREVO_SENDER,
+      to: buildDestinatairesEquipe(techEmail, data.technicien_prenom),
+      subject,
+      htmlContent: html,
+    });
+
+    console.log(
+      "[envoyerEmailDeplacementEquipe] Email envoyé:",
+      result.messageId ?? "(no messageId)"
+    );
+
+    return { success: true, messageId: result.messageId ?? undefined };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[envoyerEmailDeplacementEquipe] Erreur:", message);
+    return { success: false, error: message };
   }
 }
 

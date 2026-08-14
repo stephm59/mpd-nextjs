@@ -4,15 +4,44 @@ import { fromZonedTime } from "date-fns-tz";
 
 const TZ = "Europe/Paris";
 
-export function getDatePremierJourReservable(delaiMinimumJours: number): Date {
-  return startOfDay(addDays(new Date(), delaiMinimumJours));
+/**
+ * Convertit une date "YYYY-MM-DD" en Date au minuit local.
+ * Même convention que startOfDay() pour rester cohérent avec le reste du module.
+ * Retourne null si la chaîne est absente ou mal formée (on ignore alors le plancher).
+ */
+export function parseDatePlancher(dateStr: string | null | undefined): Date | null {
+  if (!dateStr) return null;
+  const match = dateStr.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const [, y, m, d] = match;
+  const date = new Date(Number(y), Number(m) - 1, Number(d));
+  return isNaN(date.getTime()) ? null : date;
+}
+
+/**
+ * Premier jour réservable = max(aujourd'hui + délai minimum, date plancher).
+ *
+ * Le plancher (paramètre `date_premiere_reservation`) sert à fermer la réservation
+ * en ligne jusqu'à une date donnée quand l'équipe est surchargée.
+ * Absent ou dépassé → comportement normal piloté par le seul délai minimum.
+ */
+export function getDatePremierJourReservable(
+  delaiMinimumJours: number,
+  datePlancher?: string | Date | null
+): Date {
+  const parDelai = startOfDay(addDays(new Date(), delaiMinimumJours));
+  const plancher =
+    datePlancher instanceof Date ? startOfDay(datePlancher) : parseDatePlancher(datePlancher);
+  if (!plancher) return parDelai;
+  return plancher > parDelai ? plancher : parDelai;
 }
 
 export function getDateDernierJourReservable(
   delaiMinimumJours: number,
-  joursVisiblesFutur: number
+  joursVisiblesFutur: number,
+  datePlancher?: string | Date | null
 ): Date {
-  const premier = getDatePremierJourReservable(delaiMinimumJours);
+  const premier = getDatePremierJourReservable(delaiMinimumJours, datePlancher);
   return addDays(premier, joursVisiblesFutur);
 }
 

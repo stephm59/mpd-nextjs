@@ -3,14 +3,180 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { isAdminAuthenticated } from "@/lib/admin/session";
-import { deleteEvent } from "@/lib/google/calendar";
+import { createEvent, deleteEvent, updateEventTime } from "@/lib/google/calendar";
 import {
   envoyerEmailAnnulationClient,
   envoyerEmailAnnulationEquipe,
+  envoyerEmailDeplacementClient,
+  envoyerEmailDeplacementEquipe,
 } from "@/lib/brevo/emails";
 import type { AnnulationData } from "@/lib/brevo/templates/annulation-client";
+import type { DeplacementData } from "@/lib/brevo/templates/deplacement-client";
+import {
+  deplacementAdminSchema,
+  type DeplacementAdminInput,
+} from "@/lib/rdv/schema-deplacement";
 
 type ActionResult = { success: true } | { success: false; error: string };
+
+/**
+ * Déplacement d'un RDV par l'équipe.
+ *
+ * Règles relâchées par rapport au client : pas de délai de 48h, pas de limite
+ * de nombre de déplacements, et le blocage `date_premiere_reservation` ne
+ * s'applique pas (l'admin choisit ses créneaux via getCreneauxDisponiblesAdmin).
+ *
+ * Comme pour l'annulation admin : agenda Google mis à jour, emails client + équipe.
+ */
+export async function deplacerRdvAdminAction(
+  input: DeplacementAdminInput
+): Promise<ActionResult> {
+  await checkAuth();
+
+  const validation = deplacementAdminSchema.safeParse(input);
+  if (!validation.success) {
+    return { success: false, error: "Données de déplacement invalides." };
+  }
+  const { reservation_id, date_debut, date_fin, technicien_id } = validation.data;
+
+  const supabase = createAdminClient();
+
+  const { data: reservation, error: fetchError } = await supabase
+    .from("rdv_reservations")
+    .select(`
+      id, reference, statut,
+      creneau_debut, creneau_fin, creneau_debut_initial,
+      annule_at, technicien_id,
+      client_prenom, client_nom, client_email,
+      client_telephone, client_adresse, client_complement,
+      prix_centimes, service_nom_personnalise, tiers_email,
+      google_event_id, google_event_calendar_id,
+      service:rdv_services(nom),
+      ville:rdv_villes(nom, code_postal),
+      marque:rdv_marques_chaudiere(nom)
+    `)
+    .eq("id", reservation_id)
+    .maybeSingle();
+
+  if (fetchError || !reservation) {
+    console.error("[deplacerRdvAdminAction] Résa introuvable:", fetchError);
+    return { success: false, error: "Réservation introuvable." };
+  }
+
+  if (reservation.statut === "annule" || reservation.annule_at) {
+    return { success: false, error: "Cette réservation est annulée, elle ne peut pas être déplacée." };
+  }
+
+  if (new Date(date_fin) <= new Date(date_debut)) {
+    return { success: false, error: "Le créneau de fin doit être après le créneau de début." };
+  }
+
+  const { data: nouveauTech } = await supabase
+    .from("rdv_techniciens")
+    .select("prenom, email_workspace, email_google")
+    .eq("id", technicien_id)
+    .maybeSingle();
+
+  const { error: updateError } = await supabase
+    .from("rdv_reservations")
+    .update({
+      creneau_debut: date_debut,
+      creneau_fin: date_fin,
+      technicien_id: technicien_id,
+      deplace_at: new Date().toISOString(),
+      deplace_par: "equipe",
+      creneau_debut_initial: reservation.creneau_debut_initial ?? reservation.creneau_debut,
+    })
+    .eq("id", reservation_id);
+
+  if (updateError) {
+    console.error("[deplacerRdvAdminAction] Erreur update:", updateError);
+    return { success: false, error: "Erreur lors du déplacement." };
+  }
+
+  const technicienChange = technicien_id !== reservation.technicien_id;
+  const serviceNom =
+    reservation.service_nom_personnalise ?? reservation.service?.nom ?? "Intervention";
+
+  // Google Calendar : décalage ou changement d'agenda (graceful degradation)
+  try {
+    if (!technicienChange && reservation.google_event_id && reservation.google_event_calendar_id) {
+      await updateEventTime(
+        reservation.google_event_calendar_id,
+        reservation.google_event_id,
+        date_debut,
+        date_fin
+      );
+    } else {
+      if (reservation.google_event_id && reservation.google_event_calendar_id) {
+        await deleteEvent(reservation.google_event_calendar_id, reservation.google_event_id);
+      }
+      if (nouveauTech?.email_google) {
+        const event = await createEvent(nouveauTech.email_google, {
+          summary: `RDV ${reservation.reference} — ${reservation.client_prenom} ${reservation.client_nom}`,
+          description: [
+            `Service : ${serviceNom}${reservation.marque?.nom ? ` (${reservation.marque.nom})` : ""}`,
+            `Référence : ${reservation.reference}`,
+            `Téléphone : ${reservation.client_telephone}`,
+            `Email : ${reservation.client_email}`,
+            "",
+            "RDV déplacé par l'équipe.",
+          ].join("\n"),
+          location: `${reservation.client_adresse}, ${reservation.ville?.code_postal ?? ""} ${reservation.ville?.nom ?? ""}`.trim(),
+          startDateTime: date_debut,
+          endDateTime: date_fin,
+        });
+        await supabase
+          .from("rdv_reservations")
+          .update({
+            google_event_id: event.eventId,
+            google_event_calendar_id: event.calendarId,
+            google_event_created_at: new Date().toISOString(),
+          })
+          .eq("id", reservation_id);
+      } else {
+        await supabase
+          .from("rdv_reservations")
+          .update({ google_event_id: null, google_event_calendar_id: null })
+          .eq("id", reservation_id);
+      }
+    }
+  } catch (err) {
+    console.error("[deplacerRdvAdminAction] Erreur Google Calendar:", err);
+    // Pas de throw : le déplacement reste effectif en base
+  }
+
+  const emailData: DeplacementData = {
+    reference: reservation.reference ?? "",
+    client_prenom: reservation.client_prenom ?? "",
+    client_nom: reservation.client_nom,
+    client_email: reservation.client_email,
+    client_adresse: reservation.client_adresse,
+    client_complement: reservation.client_complement,
+    service_nom: serviceNom,
+    marque_nom: reservation.marque?.nom ?? null,
+    ancienne_date_debut: reservation.creneau_debut,
+    ancienne_date_fin: reservation.creneau_fin,
+    date_debut,
+    date_fin,
+    technicien_prenom: nouveauTech?.prenom ?? "Notre technicien",
+    ville_nom: reservation.ville?.nom ?? "",
+    ville_cp: reservation.ville?.code_postal ?? "",
+    prix_centimes: reservation.prix_centimes,
+    deplace_par: "equipe",
+  };
+
+  const cc = reservation.tiers_email ? [reservation.tiers_email] : undefined;
+
+  await Promise.allSettled([
+    envoyerEmailDeplacementClient(emailData, cc),
+    envoyerEmailDeplacementEquipe(emailData, nouveauTech?.email_workspace ?? null),
+  ]);
+
+  revalidatePath("/admin/rdv");
+  revalidatePath(`/admin/rdv/${reservation_id}`);
+  return { success: true };
+}
 
 async function checkAuth() {
   if (!(await isAdminAuthenticated())) {

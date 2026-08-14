@@ -85,6 +85,38 @@ export async function createEvent(
 }
 
 /**
+ * Décale un événement existant (nouveau créneau, même technicien).
+ *
+ * Utilisé par le déplacement de RDV. Si le technicien change, on ne passe PAS
+ * par ici : l'appelant supprime l'event de l'ancien agenda et en crée un neuf
+ * dans celui du nouveau tech (un event Google appartient à un calendrier donné).
+ */
+export async function updateEventTime(
+  technicienEmail: string,
+  eventId: string,
+  startDateTime: string,
+  endDateTime: string
+): Promise<void> {
+  const calendar = await getCalendarClient()
+
+  try {
+    await calendar.events.patch({
+      calendarId: technicienEmail,
+      eventId,
+      requestBody: {
+        start: { dateTime: startDateTime, timeZone: 'Europe/Paris' },
+        end: { dateTime: endDateTime, timeZone: 'Europe/Paris' },
+      },
+      sendUpdates: 'none',
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error(`[updateEventTime] Erreur pour ${technicienEmail}:`, message)
+    throw new Error(`Impossible de décaler l'événement Google Calendar : ${message}`)
+  }
+}
+
+/**
  * Supprime un événement du calendrier d'un tech.
  */
 export async function deleteEvent(

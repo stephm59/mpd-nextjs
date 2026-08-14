@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRdvDetail } from "@/lib/admin/rdv";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { RdvDetailClient } from "./RdvDetailClient";
 
 export const metadata: Metadata = {
@@ -21,6 +22,15 @@ export default async function RdvDetailPage({ params }: PageProps) {
 
   if (!rdv) notFound();
 
+  // Identifiants bruts nécessaires au déplacement (getRdvDetail ne renvoie que
+  // les libellés). Requête à part pour ne pas modifier le type partagé RdvDetail.
+  const supabase = createAdminClient();
+  const { data: ids } = await supabase
+    .from("rdv_reservations")
+    .select("service_id, ville_id, technicien_id, duree_personnalisee_minutes, deplace_at, deplace_par, creneau_debut_initial")
+    .eq("id", id)
+    .maybeSingle();
+
   return (
     <div>
       <Link href="/admin/rdv" className="text-sm text-blue-600 hover:underline mb-4 inline-block">
@@ -31,7 +41,22 @@ export default async function RdvDetailPage({ params }: PageProps) {
         RDV {rdv.reference ?? "(sans référence)"}
       </h1>
 
-      <RdvDetailClient rdv={rdv} />
+      <RdvDetailClient
+        rdv={rdv}
+        deplacement={
+          ids
+            ? {
+                serviceId: ids.service_id,
+                villeId: ids.ville_id,
+                technicienId: ids.technicien_id,
+                dureePersoMinutes: ids.duree_personnalisee_minutes,
+                deplaceAt: ids.deplace_at,
+                deplacePar: ids.deplace_par,
+                creneauDebutInitial: ids.creneau_debut_initial,
+              }
+            : null
+        }
+      />
     </div>
   );
 }

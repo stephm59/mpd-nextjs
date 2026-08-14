@@ -12,14 +12,23 @@ import {
 import { reservationSchema, type ReservationInput } from "@/lib/rdv/schema";
 import { formatMontantPourGoogleCalendar } from "@/lib/rdv/format";
 import { annulationSchema } from "@/lib/rdv/schema-annulation";
-import { createEvent, deleteEvent } from "@/lib/google/calendar";
+import {
+  deplacementClientSchema,
+  type DeplacementClientInput,
+  DELAI_DEPLACEMENT_HEURES,
+  MAX_DEPLACEMENTS_CLIENT,
+} from "@/lib/rdv/schema-deplacement";
+import { createEvent, deleteEvent, updateEventTime } from "@/lib/google/calendar";
 import { getTechniciensBusy, isTechAvailable } from "@/lib/google/availability";
 import {
   envoyerEmailConfirmationClient,
   envoyerEmailAnnulationClient,
   envoyerEmailAnnulationEquipe,
   envoyerEmailNotificationEquipe,
+  envoyerEmailDeplacementClient,
+  envoyerEmailDeplacementEquipe,
 } from "@/lib/brevo/emails";
+import type { DeplacementData } from "@/lib/brevo/templates/deplacement-client";
 import type { AnnulationData } from "@/lib/brevo/templates/annulation-client";
 import type { NotificationEquipeData } from "@/lib/brevo/templates/notification-equipe";
 
@@ -340,8 +349,12 @@ export async function getCreneauxDisponibles(params: {
   }
   if (techsDispos.length === 0) return [];
 
-  const datePremier = getDatePremierJourReservable(delaiMin);
-  const dateDernier = getDateDernierJourReservable(delaiMin, joursVisibles);
+  // Plancher de réservation en ligne (ex : équipe surchargée → rien avant le 14/09).
+  // Paramètre absent = pas de plancher, comportement normal.
+  const datePlancher = parametres["date_premiere_reservation"] ?? null;
+
+  const datePremier = getDatePremierJourReservable(delaiMin, datePlancher);
+  const dateDernier = getDateDernierJourReservable(delaiMin, joursVisibles, datePlancher);
 
   // Récupère les périodes d'occupation Google Calendar pour les techs compatibles.
   // Si OAuth pas connecté ou tech sans email_google : busyByTech ne contiendra pas ce tech
@@ -553,6 +566,291 @@ export async function creerReservation(
     reservation_id: reservation.id,
     reference: reference,
   };
+}
+
+export type RaisonRefusDeplacement =
+  | "introuvable"
+  | "deja_annule"
+  | "rdv_passe"
+  | "deadline_depassee"
+  | "deja_deplace"
+  | "non_deplacable"
+  | "creneau_indisponible";
+
+export type DeplacerReservationResult =
+  | { success: true; reference: string }
+  | { success: false; error: string; raison: RaisonRefusDeplacement };
+
+/**
+ * Server Action : déplace une réservation vers un nouveau créneau, via le token
+ * reçu par email.
+ *
+ * Règles côté client (volontairement plus strictes que côté admin) :
+ * - RDV ni annulé ni passé
+ * - au moins 48h avant le RDV actuel (même seuil que l'annulation)
+ * - un seul déplacement autorisé, ensuite c'est par téléphone
+ * - RDV "personnalisé" créé par l'équipe (sans service) non déplaçable en ligne
+ *
+ * Le nouveau créneau est revalidé contre les disponibilités réelles : on ne fait
+ * pas confiance à ce que renvoie le navigateur.
+ */
+export async function deplacerReservation(
+  input: DeplacementClientInput
+): Promise<DeplacerReservationResult> {
+  const validation = deplacementClientSchema.safeParse(input);
+  if (!validation.success) {
+    return { success: false, error: "Demande invalide.", raison: "introuvable" };
+  }
+  const { token, date_debut, date_fin, technicien_id } = validation.data;
+
+  const supabase = createAdminClient();
+
+  const { data: reservation, error: fetchError } = await supabase
+    .from("rdv_reservations")
+    .select(`
+      id, reference, statut,
+      creneau_debut, creneau_fin, creneau_debut_initial,
+      annule_at, deplace_at, nb_deplacements_client,
+      service_id, ville_id, marque_id, technicien_id,
+      client_prenom, client_nom, client_email,
+      client_telephone, client_adresse, client_complement,
+      prix_centimes, tiers_email,
+      google_event_id, google_event_calendar_id,
+      service:rdv_services(nom),
+      ville:rdv_villes(nom, code_postal),
+      marque:rdv_marques_chaudiere(nom)
+    `)
+    .eq("annulation_token", token)
+    .maybeSingle();
+
+  if (fetchError || !reservation) {
+    return {
+      success: false,
+      error: "Réservation introuvable. Le lien est peut-être invalide.",
+      raison: "introuvable",
+    };
+  }
+
+  if (reservation.statut === "annule" || reservation.annule_at) {
+    return {
+      success: false,
+      error: "Cette réservation a été annulée. Vous pouvez en reprendre une nouvelle.",
+      raison: "deja_annule",
+    };
+  }
+
+  const maintenant = new Date();
+  const debutActuel = new Date(reservation.creneau_debut);
+
+  if (debutActuel < maintenant) {
+    return {
+      success: false,
+      error: "Ce rendez-vous est déjà passé.",
+      raison: "rdv_passe",
+    };
+  }
+
+  const heuresAvantRdv = (debutActuel.getTime() - maintenant.getTime()) / (1000 * 60 * 60);
+  if (heuresAvantRdv < DELAI_DEPLACEMENT_HEURES) {
+    return {
+      success: false,
+      error: `Le déplacement en ligne n'est plus possible (moins de ${DELAI_DEPLACEMENT_HEURES}h avant le rendez-vous). Merci d'appeler le 03 28 53 48 68.`,
+      raison: "deadline_depassee",
+    };
+  }
+
+  if ((reservation.nb_deplacements_client ?? 0) >= MAX_DEPLACEMENTS_CLIENT) {
+    return {
+      success: false,
+      error: "Ce rendez-vous a déjà été déplacé une fois. Pour le décaler à nouveau, appelez-nous au 03 28 53 48 68.",
+      raison: "deja_deplace",
+    };
+  }
+
+  if (!reservation.service_id) {
+    return {
+      success: false,
+      error: "Ce rendez-vous ne peut pas être déplacé en ligne. Merci d'appeler le 03 28 53 48 68.",
+      raison: "non_deplacable",
+    };
+  }
+
+  // Revalidation : le créneau choisi doit exister dans les disponibilités réelles
+  // au moment de la validation (quelqu'un a pu le prendre entre-temps).
+  const creneaux = await getCreneauxDisponibles({
+    serviceId: reservation.service_id,
+    villeId: reservation.ville_id,
+    marqueId: reservation.marque_id,
+    technicienIdPrefere: technicien_id,
+  });
+
+  const creneauValide = creneaux.some(
+    (c) => c.debut === date_debut && c.fin === date_fin && c.technicien_id === technicien_id
+  );
+
+  if (!creneauValide) {
+    return {
+      success: false,
+      error: "Ce créneau vient d'être pris. Choisissez-en un autre.",
+      raison: "creneau_indisponible",
+    };
+  }
+
+  const technicienChange = technicien_id !== reservation.technicien_id;
+
+  const { data: nouveauTech } = await supabase
+    .from("rdv_techniciens")
+    .select("prenom, email_workspace, email_google")
+    .eq("id", technicien_id)
+    .maybeSingle();
+
+  const { error: updateError } = await supabase
+    .from("rdv_reservations")
+    .update({
+      creneau_debut: date_debut,
+      creneau_fin: date_fin,
+      technicien_id: technicien_id,
+      deplace_at: maintenant.toISOString(),
+      deplace_par: "client",
+      nb_deplacements_client: (reservation.nb_deplacements_client ?? 0) + 1,
+      // Conserve la trace du créneau d'origine, uniquement au premier déplacement
+      creneau_debut_initial: reservation.creneau_debut_initial ?? reservation.creneau_debut,
+    })
+    .eq("id", reservation.id);
+
+  if (updateError) {
+    console.error("[deplacerReservation] Erreur update:", updateError);
+    return {
+      success: false,
+      error: "Erreur lors du déplacement. Réessayez ou appelez-nous.",
+      raison: "introuvable",
+    };
+  }
+
+  // Google Calendar : décalage de l'event, ou déplacement d'agenda si le tech change.
+  // Graceful degradation : un échec ici ne remet pas en cause le déplacement en base.
+  await synchroniserEventDeplacement({
+    ancienEventId: reservation.google_event_id,
+    ancienCalendarId: reservation.google_event_calendar_id,
+    technicienChange,
+    nouveauTechEmailGoogle: nouveauTech?.email_google ?? null,
+    reservationId: reservation.id,
+    reference: reservation.reference ?? "",
+    dateDebut: date_debut,
+    dateFin: date_fin,
+    resume: `RDV ${reservation.reference} — ${reservation.client_prenom} ${reservation.client_nom}`,
+    description: [
+      `Service : ${reservation.service?.nom ?? "Intervention"}${reservation.marque?.nom ? ` (${reservation.marque.nom})` : ""}`,
+      `Référence : ${reservation.reference}`,
+      `Téléphone : ${reservation.client_telephone}`,
+      `Email : ${reservation.client_email}`,
+      formatMontantPourGoogleCalendar(reservation.prix_centimes, null),
+      "",
+      "RDV déplacé par le client.",
+    ].filter(Boolean).join("\n"),
+    lieu: `${reservation.client_adresse}, ${reservation.ville?.code_postal ?? ""} ${reservation.ville?.nom ?? ""}`.trim(),
+  });
+
+  const emailData: DeplacementData = {
+    reference: reservation.reference ?? "",
+    client_prenom: reservation.client_prenom ?? "",
+    client_nom: reservation.client_nom,
+    client_email: reservation.client_email,
+    client_adresse: reservation.client_adresse,
+    client_complement: reservation.client_complement,
+    service_nom: reservation.service?.nom ?? "Intervention",
+    marque_nom: reservation.marque?.nom ?? null,
+    ancienne_date_debut: reservation.creneau_debut,
+    ancienne_date_fin: reservation.creneau_fin,
+    date_debut: date_debut,
+    date_fin: date_fin,
+    technicien_prenom: nouveauTech?.prenom ?? "Notre technicien",
+    ville_nom: reservation.ville?.nom ?? "",
+    ville_cp: reservation.ville?.code_postal ?? "",
+    prix_centimes: reservation.prix_centimes,
+    deplace_par: "client",
+  };
+
+  const ccClient = reservation.tiers_email ? [reservation.tiers_email] : undefined;
+
+  await Promise.allSettled([
+    envoyerEmailDeplacementClient(emailData, ccClient),
+    envoyerEmailDeplacementEquipe(emailData, nouveauTech?.email_workspace ?? null),
+  ]);
+
+  return { success: true, reference: reservation.reference ?? "" };
+}
+
+/**
+ * Répercute un déplacement sur Google Calendar.
+ * - même technicien  → on décale l'event existant
+ * - technicien changé → on supprime l'ancien event et on en crée un dans le bon agenda
+ *
+ * Ne throw jamais : le RDV est déjà déplacé en base, l'agenda se rattrape à la main.
+ */
+async function synchroniserEventDeplacement(params: {
+  ancienEventId: string | null;
+  ancienCalendarId: string | null;
+  technicienChange: boolean;
+  nouveauTechEmailGoogle: string | null;
+  reservationId: string;
+  reference: string;
+  dateDebut: string;
+  dateFin: string;
+  resume: string;
+  description: string;
+  lieu: string;
+}): Promise<void> {
+  const supabase = createAdminClient();
+
+  try {
+    // Cas 1 : même tech, event existant → simple décalage
+    if (!params.technicienChange && params.ancienEventId && params.ancienCalendarId) {
+      await updateEventTime(
+        params.ancienCalendarId,
+        params.ancienEventId,
+        params.dateDebut,
+        params.dateFin
+      );
+      return;
+    }
+
+    // Cas 2 : le tech change → l'ancien event doit disparaître de son agenda
+    if (params.ancienEventId && params.ancienCalendarId) {
+      await deleteEvent(params.ancienCalendarId, params.ancienEventId);
+    }
+
+    if (!params.nouveauTechEmailGoogle) {
+      // Nouveau tech sans agenda Google connecté : on nettoie les références
+      await supabase
+        .from("rdv_reservations")
+        .update({
+          google_event_id: null,
+          google_event_calendar_id: null,
+        })
+        .eq("id", params.reservationId);
+      return;
+    }
+
+    const event = await createEvent(params.nouveauTechEmailGoogle, {
+      summary: params.resume,
+      description: params.description,
+      location: params.lieu,
+      startDateTime: params.dateDebut,
+      endDateTime: params.dateFin,
+    });
+
+    await supabase
+      .from("rdv_reservations")
+      .update({
+        google_event_id: event.eventId,
+        google_event_calendar_id: event.calendarId,
+        google_event_created_at: new Date().toISOString(),
+      })
+      .eq("id", params.reservationId);
+  } catch (err) {
+    console.error("[synchroniserEventDeplacement] Erreur Google Calendar:", err);
+  }
 }
 
 export type AnnulerReservationResult =

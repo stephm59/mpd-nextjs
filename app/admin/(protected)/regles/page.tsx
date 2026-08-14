@@ -147,6 +147,17 @@ export default async function AdminReglesPage() {
               <dd className="font-medium text-slate-900">{param("jours_visibles_futur")} jours</dd>
             </div>
             <div>
+              <dt className="text-slate-500">Réservation en ligne bloquée avant le</dt>
+              <dd className="font-medium text-slate-900">
+                {param("date_premiere_reservation") === "—" || param("date_premiere_reservation") === ""
+                  ? "Aucun blocage"
+                  : param("date_premiere_reservation")}
+                <span className="block text-xs font-normal text-slate-500">
+                  Ne s&apos;applique pas à la création manuelle d&apos;un RDV
+                </span>
+              </dd>
+            </div>
+            <div>
               <dt className="text-slate-500">Max RDV/jour (toute l&apos;équipe)</dt>
               <dd className="font-medium text-slate-900">{param("max_rdv_jour_total")}</dd>
             </div>

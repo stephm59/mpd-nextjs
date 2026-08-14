@@ -3,9 +3,10 @@ import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, Calendar, Clock, MapPin, User, Tag, Phone, ArrowLeft, Banknote } from "lucide-react";
+import { CheckCircle2, Calendar, Clock, MapPin, User, Tag, Phone, ArrowLeft, Banknote, CalendarClock } from "lucide-react";
 import { formatPrice } from "@/lib/rdv/format";
 import { formatJourLong } from "@/lib/rdv/dates";
+import { DELAI_DEPLACEMENT_HEURES, MAX_DEPLACEMENTS_CLIENT } from "@/lib/rdv/schema-deplacement";
 import { formatInTimeZone } from "date-fns-tz";
 import type { Metadata } from "next";
 import HeaderSimple from "@/components/layout/HeaderSimple";
@@ -44,6 +45,9 @@ export default async function ConfirmationPage({ params }: { params: Params }) {
       prix_centimes,
       statut,
       created_at,
+      annulation_token,
+      annule_at,
+      nb_deplacements_client,
       service:rdv_services(id, nom, slug),
       ville:rdv_villes(id, nom, code_postal),
       marque:rdv_marques_chaudiere(id, nom),
@@ -60,6 +64,14 @@ export default async function ConfirmationPage({ params }: { params: Params }) {
   const dateFin = new Date(reservation.creneau_fin);
   const heureDebut = formatInTimeZone(dateDebut, "Europe/Paris", "HH:mm");
   const heureFin = formatInTimeZone(dateFin, "Europe/Paris", "HH:mm");
+
+  // Mêmes conditions que les pages déplacer/annuler : inutile de proposer une
+  // action que la page d'arrivée refusera (annulé, passé, ou moins de 48h avant).
+  const heuresAvantRdv = (dateDebut.getTime() - Date.now()) / (1000 * 60 * 60);
+  const estAnnule = reservation.statut === "annule" || reservation.annule_at !== null;
+  const peutModifier = !estAnnule && heuresAvantRdv >= DELAI_DEPLACEMENT_HEURES;
+  const peutDeplacer =
+    peutModifier && (reservation.nb_deplacements_client ?? 0) < MAX_DEPLACEMENTS_CLIENT;
 
   return (
     <>
@@ -203,6 +215,38 @@ export default async function ConfirmationPage({ params }: { params: Params }) {
           </ul>
         </CardContent>
       </Card>
+
+      {peutModifier && (
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <p className="text-sm font-semibold text-foreground">Un empêchement ?</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {peutDeplacer
+                ? "Vous pouvez décaler ou annuler ce rendez-vous jusqu'à 48h avant."
+                : "Ce rendez-vous a déjà été déplacé une fois. Vous pouvez encore l'annuler, ou nous appeler pour le décaler à nouveau."}
+            </p>
+            <div className="mt-4 flex flex-col sm:flex-row gap-3">
+              {peutDeplacer && (
+                <Button variant="outline" asChild>
+                  <Link href={`/rdv/deplacer/${reservation.annulation_token}`}>
+                    <CalendarClock className="mr-2 h-4 w-4" />
+                    Déplacer ce rendez-vous
+                  </Link>
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                asChild
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Link href={`/rdv/annuler/${reservation.annulation_token}`}>
+                  Annuler ce rendez-vous
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="mb-6 border-primary/20 bg-primary/5">
         <CardContent className="p-6">

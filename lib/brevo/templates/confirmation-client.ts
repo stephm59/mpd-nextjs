@@ -32,6 +32,8 @@ export function genererEmailConfirmationClient(data: ConfirmationClientData): { 
 
   const urlConfirmation = `https://www.monptitdepanneur.fr/rdv/confirmation/${data.reference}`;
   const urlAnnulation = `https://www.monptitdepanneur.fr/rdv/annuler/${data.annulation_token}`;
+  // Même jeton que l'annulation : un seul secret par réservation
+  const urlDeplacement = `https://www.monptitdepanneur.fr/rdv/deplacer/${data.annulation_token}`;
 
   const prixAffiche = data.prix_libre && data.prix_libre.trim().length > 0
     ? data.prix_libre.trim()
@@ -148,8 +150,12 @@ export function genererEmailConfirmationClient(data: ConfirmationClientData): { 
       <tr>
         <td align="center">
           <p style="margin: 0 0 8px; font-size: 13px; color: #94a3b8;">
-            Vous ne pouvez plus venir ?
+            Un empêchement ?
           </p>
+          <a href="${urlDeplacement}" style="color: ${COULEUR_PRIMAIRE}; text-decoration: underline; font-size: 13px; font-weight: 600;">
+            Déplacer ce rendez-vous
+          </a>
+          <span style="color: #cbd5e1; font-size: 13px;"> &nbsp;·&nbsp; </span>
           <a href="${urlAnnulation}" style="color: #dc2626; text-decoration: underline; font-size: 13px; font-weight: 500;">
             Annuler ce rendez-vous
           </a>

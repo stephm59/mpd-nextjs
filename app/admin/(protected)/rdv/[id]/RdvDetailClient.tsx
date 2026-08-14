@@ -3,7 +3,14 @@
 import * as React from "react";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { annulerRdvAdminAction } from "../actions";
+import { annulerRdvAdminAction, deplacerRdvAdminAction } from "../actions";
+import {
+  getCreneauxDisponiblesAdmin,
+  getTechniciensActifs,
+  type CreneauAdmin,
+} from "../nouveau/actions";
+import { formatInTimeZone } from "date-fns-tz";
+import { fr } from "date-fns/locale";
 
 interface RdvDetail {
   id: string;
@@ -30,11 +37,22 @@ interface RdvDetail {
   ville_cp: string | null;
 }
 
-interface Props {
-  rdv: RdvDetail;
+export interface DeplacementContext {
+  serviceId: string | null;
+  villeId: string;
+  technicienId: string;
+  dureePersoMinutes: number | null;
+  deplaceAt: string | null;
+  deplacePar: string | null;
+  creneauDebutInitial: string | null;
 }
 
-export function RdvDetailClient({ rdv }: Props) {
+interface Props {
+  rdv: RdvDetail;
+  deplacement?: DeplacementContext | null;
+}
+
+export function RdvDetailClient({ rdv, deplacement }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showConfirm, setShowConfirm] = React.useState(false);
@@ -126,6 +144,19 @@ export function RdvDetailClient({ rdv }: Props) {
             </div>
           </div>
 
+          {!isAnnule && deplacement && (
+            <DeplacerPanel
+              rdvId={rdv.id}
+              ctx={deplacement}
+              creneauActuel={{ debut: rdv.creneau_debut, fin: rdv.creneau_fin }}
+              onDone={(msg) => {
+                notify("success", msg);
+                router.refresh();
+              }}
+              onError={(msg) => notify("error", msg)}
+            />
+          )}
+
           {!isAnnule && (
             <div className="bg-white border border-slate-200 rounded-lg p-5">
               <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-3">Actions</h2>
@@ -161,6 +192,206 @@ export function RdvDetailClient({ rdv }: Props) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Déplacement d'un RDV côté équipe.
+ *
+ * Utilise les créneaux admin (pas de délai mini, pas de blocage `date_premiere_reservation`,
+ * tous les techs actifs) : quand un client appelle, Ophélie doit pouvoir caler ce qu'elle veut.
+ */
+function DeplacerPanel({
+  rdvId,
+  ctx,
+  creneauActuel,
+  onDone,
+  onError,
+}: {
+  rdvId: string;
+  ctx: DeplacementContext;
+  creneauActuel: { debut: string; fin: string };
+  onDone: (msg: string) => void;
+  onError: (msg: string) => void;
+}) {
+  const [ouvert, setOuvert] = React.useState(false);
+  const [creneaux, setCreneaux] = React.useState<CreneauAdmin[] | null>(null);
+  const [jourSelectionne, setJourSelectionne] = React.useState<string | null>(null);
+  const [choix, setChoix] = React.useState<{ creneau: CreneauAdmin; technicienId: string } | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  React.useEffect(() => {
+    if (!ouvert || creneaux !== null) return;
+
+    getTechniciensActifs().then((techs) => {
+      getCreneauxDisponiblesAdmin({
+        serviceId: ctx.serviceId,
+        dureeMinutes: ctx.dureePersoMinutes,
+        villeId: ctx.villeId,
+        technicienIds: techs.map((t) => t.id),
+      }).then(setCreneaux);
+    });
+  }, [ouvert, creneaux, ctx.serviceId, ctx.dureePersoMinutes, ctx.villeId]);
+
+  function jourDe(iso: string): string {
+    return formatInTimeZone(new Date(iso), "Europe/Paris", "yyyy-MM-dd");
+  }
+
+  const jours = creneaux
+    ? Array.from(new Set(creneaux.map((c) => jourDe(c.debut)))).sort()
+    : [];
+  const creneauxDuJour = creneaux && jourSelectionne
+    ? creneaux.filter((c) => jourDe(c.debut) === jourSelectionne)
+    : [];
+
+  function confirmer() {
+    if (!choix) return;
+    startTransition(async () => {
+      const result = await deplacerRdvAdminAction({
+        reservation_id: rdvId,
+        date_debut: choix.creneau.debut,
+        date_fin: choix.creneau.fin,
+        technicien_id: choix.technicienId,
+      });
+      if (result.success) {
+        setOuvert(false);
+        setChoix(null);
+        setCreneaux(null);
+        onDone("RDV déplacé, client et technicien prévenus");
+      } else {
+        onError(result.error);
+      }
+    });
+  }
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg p-5">
+      <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-3">
+        Déplacer
+      </h2>
+
+      {ctx.deplaceAt && (
+        <p className="mb-3 text-xs text-slate-500">
+          Déjà déplacé le{" "}
+          {formatInTimeZone(new Date(ctx.deplaceAt), "Europe/Paris", "dd/MM/yyyy 'à' HH:mm")}
+          {ctx.deplacePar === "client" ? " par le client" : " par l'équipe"}
+          {ctx.creneauDebutInitial && (
+            <>
+              {" · créneau d'origine : "}
+              {formatInTimeZone(new Date(ctx.creneauDebutInitial), "Europe/Paris", "dd/MM/yyyy HH:mm")}
+            </>
+          )}
+        </p>
+      )}
+
+      {!ouvert ? (
+        <button
+          onClick={() => setOuvert(true)}
+          className="text-blue-600 text-sm hover:underline"
+        >
+          Déplacer ce RDV
+        </button>
+      ) : (
+        <div>
+          <p className="mb-3 text-sm text-slate-600">
+            Créneau actuel :{" "}
+            <strong className="text-slate-900">
+              {formatInTimeZone(new Date(creneauActuel.debut), "Europe/Paris", "dd/MM/yyyy HH:mm")}
+              {" - "}
+              {formatInTimeZone(new Date(creneauActuel.fin), "Europe/Paris", "HH:mm")}
+            </strong>
+          </p>
+
+          {creneaux === null && (
+            <p className="text-sm text-slate-500">Chargement des disponibilités...</p>
+          )}
+
+          {creneaux !== null && jours.length === 0 && (
+            <p className="text-sm text-slate-500">
+              Aucun créneau disponible. Vérifiez la connexion Google Calendar.
+            </p>
+          )}
+
+          {creneaux !== null && jours.length > 0 && (
+            <>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Jour</label>
+              <select
+                value={jourSelectionne ?? ""}
+                onChange={(e) => {
+                  setJourSelectionne(e.target.value || null);
+                  setChoix(null);
+                }}
+                className="w-full mb-3 rounded-md border border-slate-300 px-3 py-2 text-sm"
+              >
+                <option value="">Choisir un jour...</option>
+                {jours.map((j) => (
+                  <option key={j} value={j}>
+                    {formatInTimeZone(new Date(`${j}T12:00:00Z`), "Europe/Paris", "EEEE d MMMM yyyy", {
+                      locale: fr,
+                    })}
+                  </option>
+                ))}
+              </select>
+
+              {jourSelectionne && (
+                <div className="space-y-1.5 max-h-64 overflow-auto">
+                  {creneauxDuJour.map((c) =>
+                    c.techniciens_libres.map((t) => {
+                      const actif =
+                        choix?.creneau.debut === c.debut && choix?.technicienId === t.id;
+                      return (
+                        <button
+                          key={`${c.debut}-${t.id}`}
+                          onClick={() => setChoix({ creneau: c, technicienId: t.id })}
+                          className={`w-full rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+                            actif
+                              ? "border-blue-500 bg-blue-50 text-slate-900"
+                              : "border-slate-200 hover:border-blue-400"
+                          }`}
+                        >
+                          <span className="font-medium">
+                            {formatInTimeZone(new Date(c.debut), "Europe/Paris", "HH:mm")}
+                            {" - "}
+                            {formatInTimeZone(new Date(c.fin), "Europe/Paris", "HH:mm")}
+                          </span>
+                          <span className="ml-2 text-slate-500">{t.prenom}</span>
+                          {t.id === ctx.technicienId && (
+                            <span className="ml-2 text-xs text-slate-400">(tech actuel)</span>
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          <div className="mt-4 flex gap-2">
+            <button
+              onClick={() => {
+                setOuvert(false);
+                setChoix(null);
+              }}
+              disabled={isPending}
+              className="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900"
+            >
+              Fermer
+            </button>
+            <button
+              onClick={confirmer}
+              disabled={!choix || isPending}
+              className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+            >
+              {isPending ? "..." : "Confirmer le déplacement"}
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-slate-500">
+            Le client recevra un email avec son nouveau créneau.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
