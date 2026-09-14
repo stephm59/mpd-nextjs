@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ConsentementCheckbox } from "@/components/ui/ConsentementCheckbox";
 import { ChevronRight, ArrowLeft, MapPin, Phone, Flame, Sparkles } from "lucide-react";
 import { formatDuration, formatPrice } from "@/lib/rdv/format";
-import { formatJourLong, parseDatePlancher } from "@/lib/rdv/dates";
+import { formatJourLong, parseDatePlancher, SEUIL_BANDEAU_DELAI_JOURS } from "@/lib/rdv/dates";
 import type { CreneauDisponible, Service } from "@/app/rdv/actions";
 import {
   getTarifByVilleId,
@@ -547,6 +547,9 @@ function Etape4ChoixDateCreneau({
   const dateMin = plancherActif ? plancher! : dateParDelai;
   const dateMax = new Date(dateMin);
   dateMax.setDate(dateMax.getDate() + parametres.joursVisiblesFutur);
+  // Plancher fixe ou long délai glissant : dans les deux cas le client arrive
+  // sur un calendrier qui démarre loin, il faut lui dire pourquoi.
+  const afficherBandeau = plancherActif || parametres.delaiMinimumJours >= SEUIL_BANDEAU_DELAI_JOURS;
 
   const NOM_JOUR_JS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
 
@@ -590,7 +593,7 @@ function Etape4ChoixDateCreneau({
         {marque && ` · ${marque.nom}`}
       </p>
 
-      {plancherActif && (
+      {afficherBandeau && (
         <div className="mt-4 rounded-md border border-primary/20 bg-primary/5 p-3">
           <p className="text-sm font-medium text-foreground">
             Prochaines disponibilités à partir du {formatJourLong(dateMin)} {dateMin.getFullYear()}

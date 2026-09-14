@@ -5,6 +5,13 @@ import { fromZonedTime } from "date-fns-tz";
 const TZ = "Europe/Paris";
 
 /**
+ * Au-delà de ce délai minimum (paramètre `delai_minimum_jours`), le tunnel affiche
+ * le bandeau « Prochaines disponibilités à partir du … » : sinon le client tombe
+ * sur des semaines grisées sans explication.
+ */
+export const SEUIL_BANDEAU_DELAI_JOURS = 7;
+
+/**
  * Convertit une date "YYYY-MM-DD" en Date au minuit local.
  * Même convention que startOfDay() pour rester cohérent avec le reste du module.
  * Retourne null si la chaîne est absente ou mal formée (on ignore alors le plancher).

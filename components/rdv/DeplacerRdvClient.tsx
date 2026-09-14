@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, Loader2 } from "lucide-react";
-import { formatJourLong, parseDatePlancher } from "@/lib/rdv/dates";
+import { formatJourLong, parseDatePlancher, SEUIL_BANDEAU_DELAI_JOURS } from "@/lib/rdv/dates";
 import { formatInTimeZone } from "date-fns-tz";
 import {
   getParametres,
@@ -108,6 +108,7 @@ export function DeplacerRdvClient({
   const dateMin = plancherActif ? plancher! : dateParDelai;
   const dateMax = new Date(dateMin);
   dateMax.setDate(dateMax.getDate() + parametres.joursVisiblesFutur);
+  const afficherBandeau = plancherActif || parametres.delaiMinimumJours >= SEUIL_BANDEAU_DELAI_JOURS;
 
   const NOM_JOUR_JS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
 
@@ -191,7 +192,7 @@ export function DeplacerRdvClient({
 
   return (
     <div>
-      {plancherActif && (
+      {afficherBandeau && (
         <div className="mb-4 rounded-md border border-primary/20 bg-primary/5 p-3">
           <p className="text-sm text-muted-foreground">
             Nos prochaines disponibilités commencent le{" "}
