@@ -30,11 +30,17 @@ import {
   type DeplacementData,
 } from "./templates/deplacement-client";
 import { genererEmailDeplacementEquipe } from "./templates/deplacement-equipe";
+import {
+  genererEmailAlerteAgenda,
+  type AlerteAgendaData,
+} from "./templates/alerte-agenda";
 
 const EQUIPE_EMAIL = process.env.EMAIL_EQUIPE ?? "contact@monptitdepanneur.fr";
 const EQUIPE_NAME = process.env.EMAIL_EQUIPE_NAME ?? "Mon p'tit Dépanneur";
 const REPLY_TO_EMAIL = process.env.EMAIL_REPLY_TO ?? "monptitdepanneur@gmail.com";
 const REPLY_TO_NAME = "Mon p'tit Dépanneur";
+// Alertes techniques (agenda non synchronisé) : boîte de Stéphane, pas l'équipe.
+const ALERTE_AGENDA_EMAIL = process.env.EMAIL_ALERTE_AGENDA ?? "monptitdepanneur@gmail.com";
 
 export interface EnvoyerEmailResult {
   success: boolean;
@@ -188,6 +194,38 @@ export async function envoyerEmailDeplacementEquipe(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[envoyerEmailDeplacementEquipe] Erreur:", message);
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Alerte l'équipe quand l'écriture dans Google Agenda a échoué.
+ * Le RDV existe en base et le client est confirmé, mais rien n'est posé dans
+ * l'agenda : sans cet email, personne ne s'en rend compte avant le jour J.
+ */
+export async function envoyerEmailAlerteAgenda(
+  data: AlerteAgendaData
+): Promise<EnvoyerEmailResult> {
+  try {
+    const { subject, html } = genererEmailAlerteAgenda(data);
+
+    const result = await brevoClient.transactionalEmails.sendTransacEmail({
+      sender: BREVO_SENDER,
+      to: [{ email: ALERTE_AGENDA_EMAIL, name: "Alerte agenda MPD" }],
+      subject,
+      htmlContent: html,
+    });
+
+    console.log(
+      "[envoyerEmailAlerteAgenda] Alerte envoyée pour",
+      data.reference,
+      result.messageId ?? "(no messageId)"
+    );
+
+    return { success: true, messageId: result.messageId ?? undefined };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[envoyerEmailAlerteAgenda] Erreur:", message);
     return { success: false, error: message };
   }
 }

@@ -9,6 +9,7 @@ import {
   envoyerEmailAnnulationEquipe,
   envoyerEmailDeplacementClient,
   envoyerEmailDeplacementEquipe,
+  envoyerEmailAlerteAgenda,
 } from "@/lib/brevo/emails";
 import type { AnnulationData } from "@/lib/brevo/templates/annulation-client";
 import type { DeplacementData } from "@/lib/brevo/templates/deplacement-client";
@@ -143,7 +144,22 @@ export async function deplacerRdvAdminAction(
     }
   } catch (err) {
     console.error("[deplacerRdvAdminAction] Erreur Google Calendar:", err);
-    // Pas de throw : le déplacement reste effectif en base
+    // Pas de throw : le déplacement reste effectif en base, mais l'agenda est
+    // resté sur l'ancien créneau — il faut le signaler.
+    await envoyerEmailAlerteAgenda({
+      reference: reservation.reference ?? "",
+      operation: "deplacement",
+      client_prenom: reservation.client_prenom ?? "",
+      client_nom: reservation.client_nom,
+      client_telephone: reservation.client_telephone,
+      client_adresse: `${reservation.client_adresse}, ${reservation.ville?.code_postal ?? ""} ${reservation.ville?.nom ?? ""}`.trim(),
+      service_nom: serviceNom,
+      technicien_prenom: nouveauTech?.prenom ?? "Technicien",
+      technicien_email: nouveauTech?.email_google ?? null,
+      date_debut: date_debut,
+      date_fin: date_fin,
+      erreur: err instanceof Error ? err.message : String(err),
+    });
   }
 
   const emailData: DeplacementData = {
@@ -214,6 +230,7 @@ export async function annulerRdvAdminAction(id: string): Promise<ActionResult> {
       client_prenom,
       client_nom,
       client_email,
+      client_telephone,
       client_adresse,
       client_complement,
       creneau_debut,
@@ -262,7 +279,23 @@ export async function annulerRdvAdminAction(id: string): Promise<ActionResult> {
       await deleteEvent(reservation.google_event_calendar_id, reservation.google_event_id);
     } catch (err) {
       console.error("[annulerRdvAdminAction] Erreur suppression event Google:", err);
-      // Pas de throw : l'annulation reste effective en base, l'event sera à supprimer à la main
+      // Pas de throw, mais l'event reste dans l'agenda du tech alors que le RDV
+      // est annulé : sans alerte, il se déplacerait pour rien.
+      await envoyerEmailAlerteAgenda({
+        reference: reservation.reference ?? "",
+        operation: "annulation",
+        client_prenom: reservation.client_prenom ?? "",
+        client_nom: reservation.client_nom,
+        client_telephone: reservation.client_telephone,
+        client_adresse: reservation.client_adresse,
+        service_nom:
+          reservation.service_nom_personnalise ?? reservation.service?.nom ?? "Intervention",
+        technicien_prenom: reservation.technicien?.prenom ?? "Technicien",
+        technicien_email: null,
+        date_debut: reservation.creneau_debut,
+        date_fin: reservation.creneau_fin,
+        erreur: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 

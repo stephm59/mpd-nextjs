@@ -27,6 +27,7 @@ import {
   envoyerEmailNotificationEquipe,
   envoyerEmailDeplacementClient,
   envoyerEmailDeplacementEquipe,
+  envoyerEmailAlerteAgenda,
 } from "@/lib/brevo/emails";
 import type { DeplacementData } from "@/lib/brevo/templates/deplacement-client";
 import type { AnnulationData } from "@/lib/brevo/templates/annulation-client";
@@ -512,7 +513,22 @@ export async function creerReservation(
         .eq("id", reservation.id);
     } catch (err) {
       console.error("[creerReservation] Erreur Google Calendar:", err);
-      // Pas de throw : la résa reste créée en base, l'équipe pourra ajouter l'event manuellement
+      // Pas de throw : la résa reste créée en base. En revanche on prévient l'équipe,
+      // sinon personne ne découvre le créneau non bloqué avant le jour du RDV.
+      await envoyerEmailAlerteAgenda({
+        reference,
+        operation: "creation",
+        client_prenom: data.client_prenom,
+        client_nom: data.client_nom,
+        client_telephone: data.client_telephone,
+        client_adresse: `${data.client_adresse}, ${villeCP ?? ""} ${villeNom ?? ""}`.trim(),
+        service_nom: serviceNom ?? "Intervention",
+        technicien_prenom: technicienPrenom ?? "Technicien",
+        technicien_email: technicienGoogleEmail,
+        date_debut: data.date_debut,
+        date_fin: data.date_fin,
+        erreur: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 
@@ -749,6 +765,13 @@ export async function deplacerReservation(
       "RDV déplacé par le client.",
     ].filter(Boolean).join("\n"),
     lieu: `${reservation.client_adresse}, ${reservation.ville?.code_postal ?? ""} ${reservation.ville?.nom ?? ""}`.trim(),
+    alerte: {
+      clientPrenom: reservation.client_prenom ?? "",
+      clientNom: reservation.client_nom,
+      clientTelephone: reservation.client_telephone,
+      serviceNom: reservation.service?.nom ?? "Intervention",
+      technicienPrenom: nouveauTech?.prenom ?? "Technicien",
+    },
   });
 
   const emailData: DeplacementData = {
@@ -800,6 +823,13 @@ async function synchroniserEventDeplacement(params: {
   resume: string;
   description: string;
   lieu: string;
+  alerte: {
+    clientPrenom: string;
+    clientNom: string;
+    clientTelephone: string;
+    serviceNom: string;
+    technicienPrenom: string;
+  };
 }): Promise<void> {
   const supabase = createAdminClient();
 
@@ -850,6 +880,20 @@ async function synchroniserEventDeplacement(params: {
       .eq("id", params.reservationId);
   } catch (err) {
     console.error("[synchroniserEventDeplacement] Erreur Google Calendar:", err);
+    await envoyerEmailAlerteAgenda({
+      reference: params.reference,
+      operation: "deplacement",
+      client_prenom: params.alerte.clientPrenom,
+      client_nom: params.alerte.clientNom,
+      client_telephone: params.alerte.clientTelephone,
+      client_adresse: params.lieu,
+      service_nom: params.alerte.serviceNom,
+      technicien_prenom: params.alerte.technicienPrenom,
+      technicien_email: params.nouveauTechEmailGoogle,
+      date_debut: params.dateDebut,
+      date_fin: params.dateFin,
+      erreur: err instanceof Error ? err.message : String(err),
+    });
   }
 }
 
@@ -950,7 +994,22 @@ annule_at,
       await deleteEvent(reservation.google_event_calendar_id, reservation.google_event_id);
     } catch (err) {
       console.error("[annulerReservation] Erreur Google Calendar:", err);
-      // Pas de throw : l'annulation reste effective en base
+      // Pas de throw : l'annulation reste effective en base. Mais l'event est
+      // toujours dans l'agenda du tech : sans alerte, il se déplacerait pour rien.
+      await envoyerEmailAlerteAgenda({
+        reference: reservation.reference ?? "",
+        operation: "annulation",
+        client_prenom: reservation.client_prenom ?? "",
+        client_nom: reservation.client_nom,
+        client_telephone: reservation.client_telephone,
+        client_adresse: reservation.client_adresse,
+        service_nom: reservation.service?.nom ?? reservation.service_nom_personnalise ?? "Intervention",
+        technicien_prenom: reservation.technicien?.prenom ?? "Technicien",
+        technicien_email: null,
+        date_debut: reservation.creneau_debut,
+        date_fin: reservation.creneau_fin,
+        erreur: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 

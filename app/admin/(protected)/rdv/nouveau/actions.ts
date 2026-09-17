@@ -12,7 +12,10 @@ import { getParametres, getTarifByVilleId } from "@/app/rdv/actions";
 import { formatMontantPourGoogleCalendar } from "@/lib/rdv/format";
 import { getTechniciensBusy, isTechAvailable } from "@/lib/google/availability";
 import { createEvent } from "@/lib/google/calendar";
-import { envoyerEmailConfirmationClient } from "@/lib/brevo/emails";
+import {
+  envoyerEmailConfirmationClient,
+  envoyerEmailAlerteAgenda,
+} from "@/lib/brevo/emails";
 import { startOfDay } from "date-fns";
 
 const SERVICE_ENTRETIEN_BALLON_ID = '18cc2ca6-0183-43c0-a170-51a10abcadf4';
@@ -296,6 +299,20 @@ export async function creerReservationAdmin(
         .eq("id", reservation.id);
     } catch (err) {
       console.error("[creerReservationAdmin] Erreur Google Calendar:", err);
+      await envoyerEmailAlerteAgenda({
+        reference,
+        operation: "creation",
+        client_prenom: data.client_prenom,
+        client_nom: data.client_nom,
+        client_telephone: data.client_telephone,
+        client_adresse: `${data.client_adresse}, ${villeCP} ${villeNom}`.trim(),
+        service_nom: serviceNom,
+        technicien_prenom: technicienPrenom,
+        technicien_email: technicienGoogleEmail,
+        date_debut: data.date_debut,
+        date_fin: data.date_fin,
+        erreur: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 
