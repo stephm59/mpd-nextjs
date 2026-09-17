@@ -152,6 +152,13 @@ export interface BusySlot {
 /**
  * Récupère les périodes d'occupation d'un tech sur une plage de temps.
  */
+/**
+ * Google refuse les plages freebusy de plus d'environ 3 mois (`timeRangeTooLong`,
+ * constaté : 92 jours passent, 95 non). Comme une erreur ici rendrait le technicien
+ * « libre » sur toute la période, on découpe en tranches sûres.
+ */
+const FREEBUSY_TRANCHE_JOURS = 60
+
 export async function getFreeBusy(
   technicienEmail: string,
   timeMin: Date,
@@ -159,25 +166,40 @@ export async function getFreeBusy(
 ): Promise<BusySlot[]> {
   const calendar = await getCalendarClient()
 
-  try {
-    const response = await calendar.freebusy.query({
-      requestBody: {
-        timeMin: timeMin.toISOString(),
-        timeMax: timeMax.toISOString(),
-        timeZone: 'Europe/Paris',
-        items: [{ id: technicienEmail }],
-      },
-    })
-
-    const busy = response.data.calendars?.[technicienEmail]?.busy ?? []
-
-    return busy.map((slot) => ({
-      start: new Date(slot.start!),
-      end: new Date(slot.end!),
-    }))
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    console.error(`[getFreeBusy] Erreur pour ${technicienEmail}:`, message)
-    return []
+  const tailleMs = FREEBUSY_TRANCHE_JOURS * 24 * 60 * 60 * 1000
+  const tranches: Array<[Date, Date]> = []
+  for (let debut = timeMin.getTime(); debut < timeMax.getTime(); debut += tailleMs) {
+    tranches.push([new Date(debut), new Date(Math.min(debut + tailleMs, timeMax.getTime()))])
   }
+
+  const parTranche = await Promise.all(
+    tranches.map(async ([debut, fin]) => {
+      try {
+        const response = await calendar.freebusy.query({
+          requestBody: {
+            timeMin: debut.toISOString(),
+            timeMax: fin.toISOString(),
+            timeZone: 'Europe/Paris',
+            items: [{ id: technicienEmail }],
+          },
+        })
+
+        const busy = response.data.calendars?.[technicienEmail]?.busy ?? []
+
+        return busy.map((slot) => ({
+          start: new Date(slot.start!),
+          end: new Date(slot.end!),
+        }))
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        console.error(
+          `[getFreeBusy] Erreur pour ${technicienEmail} (${debut.toISOString()} -> ${fin.toISOString()}):`,
+          message
+        )
+        return []
+      }
+    })
+  )
+
+  return parTranche.flat().sort((a, b) => a.start.getTime() - b.start.getTime())
 }
