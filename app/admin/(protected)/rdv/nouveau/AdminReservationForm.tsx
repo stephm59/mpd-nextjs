@@ -689,8 +689,14 @@ function EtapeDateTechs({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const dateMin = today;
-  const dateMax = new Date(today);
-  dateMax.setDate(dateMax.getDate() + 60);
+
+  // Le serveur borne déjà la fenêtre (paramètre `jours_visibles_futur`). Une limite
+  // en dur ici la raccourcissait en silence : le calendrier s'arrêtait à 60 jours,
+  // donc décembre et janvier étaient inatteignables depuis l'admin.
+  const joursDisponibles = creneauxParJour ? Array.from(creneauxParJour.keys()).sort() : [];
+  const dernierJourDispo = joursDisponibles[joursDisponibles.length - 1];
+  // Sans aucun créneau, le calendrier n'a de toute façon rien à proposer.
+  const dateMax = dernierJourDispo ? cleVersDate(dernierJourDispo) : dateMin;
 
   const NOM_JOUR_JS = [
     "dimanche",
@@ -705,6 +711,10 @@ function EtapeDateTechs({
 
   function dateToKey(date: Date): string {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  }
+  function cleVersDate(cle: string): Date {
+    const [annee, mois, jour] = cle.split("-").map(Number);
+    return new Date(annee, mois - 1, jour);
   }
   function jourADesCreneaux(date: Date): boolean {
     return (creneauxParJour?.get(dateToKey(date))?.length ?? 0) > 0;
