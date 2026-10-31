@@ -20,13 +20,13 @@ import HomeBlog from '@/components/sections/HomeBlog'
 import ServiceAreas from '@/components/sections/ServiceAreas'
 
 export const metadata: Metadata = {
-  title: "Mon p'tit Dépanneur : Chauffagiste, Serrurier, Plombier (Lille)",
-  description: "Une chaudière à changer ? Une serrure à remplacer ? Une fuite d'eau à réparer ? Pour toute urgence : Mon p'tit Dépanneur (03 28 53 48 68)",
+  title: "Mon p'tit Dépanneur – Artisan dépanneur à Lille depuis 20 ans",
+  description: "Chaudière, fuite d'eau, serrure, vitre cassée : 12 artisans lillois interviennent le jour même. Devis écrit avant de commencer. ☎ 03 28 53 48 68.",
   alternates: { canonical: 'https://www.monptitdepanneur.fr' },
-  keywords: 'plombier lille, chauffagiste lille, serrurier lille, dépannage lille, pompe à chaleur lille',
+  keywords: "dépanneur lille, dépannage lille, artisan lille, mon p'tit dépanneur",
   openGraph: {
-    title: "Mon p'tit Dépanneur : Chauffagiste, Serrurier, Plombier (Lille)",
-    description: "Services de réparation d'urgence 24/7 - Chauffage, Plomberie, Serrurerie",
+    title: "Mon p'tit Dépanneur – Artisan dépanneur à Lille depuis 20 ans",
+    description: "12 artisans lillois pour votre chauffage, votre plomberie, votre serrurerie et votre vitrerie.",
     url: 'https://www.monptitdepanneur.fr',
     images: [{ url: 'https://pub-ee5d8554679a4a23a82caac56686992a.r2.dev/equipe-mon-ptit-depanneur.webp' }],
   },
