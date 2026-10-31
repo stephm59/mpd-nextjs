@@ -25,20 +25,29 @@ const nextConfig: NextConfig = {
       // Articles de blog
       { source: '/nettoyage-de-canalisation', destination: '/carnet/7-astuces-deboucher-canalisations', permanent: true },
       { source: '/nettoyage-de-canalisation/', destination: '/carnet/7-astuces-deboucher-canalisations', permanent: true },
+      { source: '/regler-reducteur-pression', destination: '/carnet/regler-reducteur-pression', permanent: true },
       { source: '/regler-reducteur-pression/', destination: '/carnet/regler-reducteur-pression', permanent: true },
+      { source: '/guide-systemes-plomberie', destination: '/carnet/systemes-plomberie-maison', permanent: true },
       { source: '/guide-systemes-plomberie/', destination: '/carnet/systemes-plomberie-maison', permanent: true },
+      { source: '/composant-serrure-porte', destination: '/carnet/composant-serrure-porte', permanent: true },
       { source: '/composant-serrure-porte/', destination: '/carnet/composant-serrure-porte', permanent: true },
+      { source: '/chauffe-eau', destination: '/carnet/chauffe-eau', permanent: true },
       { source: '/chauffe-eau/', destination: '/carnet/chauffe-eau', permanent: true },
+      { source: '/quel-cylindre-porte-entree', destination: '/carnet/quel-cylindre-porte-entree', permanent: true },
       { source: '/quel-cylindre-porte-entree/', destination: '/carnet/quel-cylindre-porte-entree', permanent: true },
+      { source: '/code-erreur-chaudiere', destination: '/carnet/code-erreur-chaudiere-signification', permanent: true },
       { source: '/code-erreur-chaudiere/', destination: '/carnet/code-erreur-chaudiere-signification', permanent: true },
+      { source: '/tuyauterie-role', destination: '/carnet/role-tuyauterie-plomberie', permanent: true },
       { source: '/tuyauterie-role/', destination: '/carnet/role-tuyauterie-plomberie', permanent: true },
       { source: '/evier-bouche', destination: '/carnet/7-astuces-deboucher-canalisations', permanent: true },
       { source: '/evier-bouche/', destination: '/carnet/7-astuces-deboucher-canalisations', permanent: true },
+      { source: '/gaz-dans-vitrages-quelle-utilite', destination: '/carnet/gaz-dans-vitrages-quelle-utilite', permanent: true },
       { source: '/gaz-dans-vitrages-quelle-utilite/', destination: '/carnet/gaz-dans-vitrages-quelle-utilite', permanent: true },
 
       // Pages service-ville
       { source: '/plomberie-lille', destination: '/plombier-lille', permanent: true },
       { source: '/pompe-chaleur-lille', destination: '/pompe-a-chaleur-lille', permanent: true },
+      { source: '/plombier-wasquehal', destination: '/plombier-lille', permanent: true },
       { source: '/plombier-wasquehal/', destination: '/plombier-lille', permanent: true },
       { source: '/plomberie-wasquehal', destination: '/plombier-lille', permanent: true },
       { source: '/plomberie-wasquehal/', destination: '/plombier-lille', permanent: true },
@@ -48,16 +57,22 @@ const nextConfig: NextConfig = {
       { source: '/serrurerie-hellemmes/', destination: '/serrurier-lille', permanent: true },
 
       // Pages auteur et pagination
+      { source: '/author/yamile/page/2', destination: '/carnet', permanent: true },
       { source: '/author/yamile/page/2/', destination: '/carnet', permanent: true },
+      { source: '/author/yamile/page/5', destination: '/carnet', permanent: true },
       { source: '/author/yamile/page/5/', destination: '/carnet', permanent: true },
+      { source: '/author/yamile/feed', destination: '/', permanent: true },
       { source: '/author/yamile/feed/', destination: '/', permanent: true },
       { source: '/lecture-compteur-eau/1000', destination: '/carnet/lecture-compteur-eau', permanent: true },
       { source: '/lecture-compteur-eau', destination: '/carnet/lecture-compteur-eau', permanent: true },
       { source: '/lecture-compteur-eau/', destination: '/carnet/lecture-compteur-eau', permanent: true },
 
       // Pages service-ville supplémentaires
+      { source: '/plombier-faches-thumesnil', destination: '/plombier-lille', permanent: true },
       { source: '/plombier-faches-thumesnil/', destination: '/plombier-lille', permanent: true },
+      { source: '/serrurier-wasquehal-2', destination: '/serrurier-lille', permanent: true },
       { source: '/serrurier-wasquehal-2/', destination: '/serrurier-lille', permanent: true },
+      { source: '/plombier-beaucamps-ligny', destination: '/plombier-lille', permanent: true },
       { source: '/plombier-beaucamps-ligny/', destination: '/plombier-lille', permanent: true },
 
       // Blog vers carnet
@@ -77,16 +92,27 @@ const nextConfig: NextConfig = {
       { source: '/serrurier-fichet-lille/', destination: '/serrurier-lille', permanent: true },
 
       // Feeds RSS
+      { source: '/plombier-sainghin-en-weppes/feed', destination: '/plombier-lille', permanent: true },
       { source: '/plombier-sainghin-en-weppes/feed/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-fleurbaix/feed', destination: '/plombier-lille', permanent: true },
       { source: '/plombier-fleurbaix/feed/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-emmerin/feed', destination: '/plombier-lille', permanent: true },
       { source: '/plombier-emmerin/feed/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-wasquehal/feed', destination: '/plombier-lille', permanent: true },
       { source: '/plombier-wasquehal/feed/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-villeneuve-d-ascq/feed', destination: '/plombier-lille', permanent: true },
       { source: '/plombier-villeneuve-d-ascq/feed/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-lezennes/feed', destination: '/plombier-lille', permanent: true },
       { source: '/plombier-lezennes/feed/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-wavrin/feed', destination: '/plombier-lille', permanent: true },
       { source: '/plombier-wavrin/feed/', destination: '/plombier-lille', permanent: true },
+      { source: '/plombier-wattignies/feed', destination: '/plombier-lille', permanent: true },
       { source: '/plombier-wattignies/feed/', destination: '/plombier-lille', permanent: true },
+      { source: '/chauffagiste-lille/feed', destination: '/chauffagiste-lille', permanent: true },
       { source: '/chauffagiste-lille/feed/', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/category/serrurerie/feed', destination: '/carnet', permanent: true },
       { source: '/category/serrurerie/feed/', destination: '/carnet', permanent: true },
+      { source: '/category/:slug/feed', destination: '/carnet', permanent: true },
       { source: '/category/:slug/feed/', destination: '/carnet', permanent: true },
 
       // Interventions obsolètes
@@ -96,6 +122,7 @@ const nextConfig: NextConfig = {
       { source: '/interventions-plomberie/', destination: '/plombier-lille', permanent: true },
       { source: '/interventions-chauffagerie', destination: '/chauffagiste-lille', permanent: true },
       { source: '/interventions-chauffagerie/', destination: '/chauffagiste-lille', permanent: true },
+      { source: '/accueil/feed', destination: '/', permanent: true },
       { source: '/accueil/feed/', destination: '/', permanent: true },
 
       // Service-ville voisines
